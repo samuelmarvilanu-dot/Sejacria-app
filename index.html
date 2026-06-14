@@ -22,43 +22,54 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 <script>
 function mostrarErro(msg){var sp=document.getElementById('sp');if(sp){sp.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:300px"><p style="font-size:28px">\u26a0\ufe0f</p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Algo deu errado</p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg).slice(0,400)+'</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">Recarregar</button></div>';}}
 
-// Carrega script com fallback de CDN
-function loadWithFallback(urls, cb){
+// Carrega um script de uma lista de CDNs, VERIFICANDO se a global foi definida
+// (não confia em onload/onerror que falham com 403)
+function carregarLib(urls, checkGlobal, cb){
   var i=0;
-  function tryNext(){
-    if(i>=urls.length){mostrarErro('Não foi possível carregar bibliotecas. Verifique sua conexão.');return;}
+  function tentar(){
+    if(i>=urls.length){cb(false);return;}
     var s=document.createElement('script');
     s.src=urls[i];
-    s.onload=cb;
-    s.onerror=function(){i++;tryNext();};
+    s.onload=function(){
+      // Verificar se a global REALMENTE existe
+      if(window[checkGlobal]){cb(true);}
+      else{i++;tentar();}
+    };
+    s.onerror=function(){i++;tentar();};
     document.head.appendChild(s);
   }
-  tryNext();
+  tentar();
 }
 
-loadWithFallback([
-  "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
+function setMsg(t){var e=document.getElementById('spm');if(e)e.textContent=t;}
+
+setMsg('Carregando React...');
+carregarLib([
   "https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js",
+  "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"
-], function(){
-  loadWithFallback([
-    "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
+], 'React', function(ok1){
+  if(!ok1){mostrarErro('Não foi possível carregar o React. Verifique sua conexão e recarregue.');return;}
+  setMsg('Carregando ReactDOM...');
+  carregarLib([
     "https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js",
+    "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"
-  ], function(){
-    loadWithFallback([
-      "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
-      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
-    ], function(){
+  ], 'ReactDOM', function(ok2){
+    if(!ok2){mostrarErro('Não foi possível carregar o ReactDOM. Recarregue.');return;}
+    setMsg('Carregando dados...');
+    carregarLib([
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
+      "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"
+    ], 'supabase', function(ok3){
+      if(!ok3){mostrarErro('Não foi possível carregar o Supabase. Recarregue.');return;}
+      setMsg('Iniciando...');
       iniciarApp();
     });
   });
 });
 
 function iniciarApp(){
-  if(typeof React==='undefined'){mostrarErro('React não disponível após carregamento.');return;}
-  if(typeof ReactDOM==='undefined'){mostrarErro('ReactDOM não disponível.');return;}
-  if(typeof supabase==='undefined'){mostrarErro('Supabase não disponível.');return;}
   window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
   var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
   try{
@@ -1260,9 +1271,4 @@ function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
                 combina(of) && React.createElement("span", { style: { display: "inline-block", marginBottom: 8, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(126,224,138,.16)", color: C.green } }, "\u2B50 Combina com voc\u00EA"),
                 React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
                     React.createElement("span", { className: "disp", style: { fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 } },
-                        React.createElement("span", { style: { fontSize: 20 } }, of.logo || "🏢"),
-                        of.marca,
-                        reputacaoMarca(of.marca) > 0 && React.createElement("span", { style: { fontSize: 11, color: "#ffcf4d" } },
-                            "\u2605 ",
-                            reputacaoMarca(of.marca))),
-                    React.createElement("span", { style: { fontWeight: 700,
+                 
