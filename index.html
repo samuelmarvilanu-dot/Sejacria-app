@@ -14,9 +14,9 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 .sp{width:40px;height:40px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 </style>
-<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
-<script crossorigin="anonymous" src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 </head>
 <body>
 <div id="sp"><div class="sp"></div><p style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando...</p></div>
@@ -1244,4 +1244,5 @@ function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
                     entregaTexto(of.entregaveis) && React.createElement(Tag, null, entregaTexto(of.entregaveis)),
                     (of.plataforma || []).map((p) => React.createElement(Tag, { key: p }, p)),
                     of.nicho && React.createElement(Tag, null, of.nicho),
-                    
+                    of.prazo && React.createElement(Tag, null,
+                        "\uD8
