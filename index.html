@@ -16,16 +16,1253 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 </style>
 </head>
 <body>
-<div id="sp"><div class="sp"></div><p id="spmsg" style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando...</p></div>
+<div id="sp"><div class="sp"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando...</p></div>
 <div id="root"></div>
+
 <script>
-function mostrarErro(msg){var sp=document.getElementById('sp');if(sp)sp.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:300px"><p style="font-size:28px">\u26a0\ufe0f</p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Algo deu errado</p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg).slice(0,400)+'</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">Recarregar</button></div>';}
-window.onerror=function(m,s,l,c,e){mostrarErro((e&&e.message?e.message:m)+' (L'+l+')');return true;};
-function carregar(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=function(){mostrarErro('Falha ao carregar: '+src);};document.head.appendChild(s);}
-function iniciar(){
-  if(!window.React||!window.ReactDOM||!window.supabase){mostrarErro('Bibliotecas nao carregaram. Recarregue.');return;}
+function mostrarErro(msg){var sp=document.getElementById('sp');if(sp){sp.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:300px"><p style="font-size:28px">\u26a0\ufe0f</p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Algo deu errado</p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg).slice(0,400)+'</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">Recarregar</button></div>';}}
+
+// Carrega script com fallback de CDN
+function loadWithFallback(urls, cb){
+  var i=0;
+  function tryNext(){
+    if(i>=urls.length){mostrarErro('Não foi possível carregar bibliotecas. Verifique sua conexão.');return;}
+    var s=document.createElement('script');
+    s.src=urls[i];
+    s.onload=cb;
+    s.onerror=function(){i++;tryNext();};
+    document.head.appendChild(s);
+  }
+  tryNext();
+}
+
+loadWithFallback([
+  "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
+  "https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"
+], function(){
+  loadWithFallback([
+    "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
+    "https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"
+  ], function(){
+    loadWithFallback([
+      "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js",
+      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+    ], function(){
+      iniciarApp();
+    });
+  });
+});
+
+function iniciarApp(){
+  if(typeof React==='undefined'){mostrarErro('React não disponível após carregamento.');return;}
+  if(typeof ReactDOM==='undefined'){mostrarErro('ReactDOM não disponível.');return;}
+  if(typeof supabase==='undefined'){mostrarErro('Supabase não disponível.');return;}
+  window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
+  var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
   try{
-    window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
-    var React=window.React,ReactDOM=window.ReactDOM;
-    var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
-    var exec=new Function('React','ReactDOM','useState','useRef','useEffect',"// ============================================================\n//  CREATOR STUDIO \u2014 prot\u00f3tipo completo\n//  \u2022 7 abas (Dom\u2192S\u00e1b): clicou no dia, gera a pauta DAQUELE dia\n//  \u2022 Pauta do dia = tudo que postar (reels, story, v\u00eddeo longo...)\n//  \u2022 Chat, Perfil edit\u00e1vel (multi-rede), Configura\u00e7\u00f5es de plano\n// ============================================================\nconst C = {\n    bg: \"var(--bg)\", ink: \"var(--ink)\", mute: \"var(--mute)\",\n    amber: \"var(--accent)\", amberDeep: \"var(--accent2)\", rose: \"var(--rose)\",\n    green: \"var(--green)\", line: \"var(--line)\", card: \"var(--card)\", soft: \"var(--soft)\",\n    onAccent: \"var(--onAccent)\",\n};\nconst DIAS = [\"Domingo\", \"Segunda\", \"Ter\u00e7a\", \"Quarta\", \"Quinta\", \"Sexta\", \"S\u00e1bado\"];\nconst ABREV = [\"Dom\", \"Seg\", \"Ter\", \"Qua\", \"Qui\", \"Sex\", \"S\u00e1b\"];\nconst PLATAFORMAS = [\"YouTube\", \"TikTok\", \"Instagram\", \"Twitch\", \"Kwai\"];\nconst FORMATOS = [\"Live\", \"V\u00eddeo longo\", \"V\u00eddeo curto\", \"Carrossel / Post\"];\nconst OBJETIVOS = [\"Crescer audi\u00eancia\", \"Vender / converter\", \"Engajamento\", \"Autoridade\"];\nconst TONS = [\"Hype / energia\", \"Did\u00e1tico\", \"Humor\", \"Inspiracional\"];\nconst FREQ = [\"1-2x semana\", \"3-4x semana\", \"Todo dia\"];\nconst SEGUIDORES = [\"Come\u00e7ando (<1k)\", \"1k - 10k\", \"10k - 100k\", \"100k+\"];\nconst PUBLICO = [\"13-17\", \"18-24\", \"25-34\", \"35+\"];\nconst ENTREGAS = [\"1 Reels\", \"3 Stories\", \"1 V\u00eddeo longo\", \"Combo (Reels + Stories)\"];\nconst LOGOS = [\"\ud83c\udfe2\", \"\ud83c\udfae\", \"\u26bd\", \"\ud83d\udd25\", \"\ud83d\udc8e\", \"\ud83d\uded2\", \"\ud83c\udfaf\", \"\ud83d\udcf1\"];\nconst CRIADORES_EXEMPLO = []; // sem exemplos \u2014 s\u00f3 criadores reais cadastrados\nconst IDADE = [\"Menor de 18\", \"18-24\", \"25-34\", \"35-44\", \"45+\"];\nconst TAXA_PLATAFORMA = 0.20; // % que a plataforma fica nos contratos com marcas\nconst TAXA_PRODUTO = 0.05; // 5% sobre cada venda de produto \u2014 abaixo de todas as concorrentes\nfunction metricasDe(faixa) {\n    const m = {\n        \"Come\u00e7ando (<1k)\": { seguidores: 600, alcance: 250, eng: 9.0 },\n        \"1k - 10k\": { seguidores: 5200, alcance: 1800, eng: 7.5 },\n        \"10k - 100k\": { seguidores: 42000, alcance: 11000, eng: 5.5 },\n        \"100k+\": { seguidores: 320000, alcance: 68000, eng: 3.8 },\n    };\n    return m[faixa] || m[\"1k - 10k\"];\n}\nfunction gerarPortfolio(nicho, plataformas) {\n    const p = (plataformas && plataformas.length) ? plataformas : [\"Instagram\"];\n    const base = nicho ? nicho : \"conte\u00fado\";\n    const cores = [\"linear-gradient(135deg,#ff9d3d,#e87420)\", \"linear-gradient(135deg,var(--green),#3d9d5a)\", \"linear-gradient(135deg,#ff6b6b,#c0392b)\", \"linear-gradient(135deg,#6b8bff,#3d50c0)\"];\n    const ideias = [`Tutorial: ${base}`, `Dicas r\u00e1pidas de ${base}`, `Minha rotina de ${base}`, `Erros comuns em ${base}`];\n    return ideias.slice(0, 3).map((tit, i) => ({\n        id: `v${i}_${Date.now()}`,\n        titulo: tit,\n        views: [128000, 64000, 31000, 12000][i] || 9000,\n        plataforma: p[i % p.length],\n        cor: cores[i % cores.length],\n    }));\n}\nconst stepBtn = { width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.line}`, background: C.soft, color: C.amber, fontSize: 20, fontWeight: 700, cursor: \"pointer\", fontFamily: \"'DM Sans', sans-serif\" };\n// in\u00edcio da semana (domingo) como chave \u2014 usado pra contar usos e zerar a cada semana\nfunction chaveSemana(d = new Date()) {\n    const x = new Date(d);\n    x.setHours(0, 0, 0, 0);\n    x.setDate(x.getDate() - x.getDay());\n    return x.toISOString().slice(0, 10);\n}\n// as 7 datas reais da semana atual (dom..s\u00e1b)\nfunction datasDaSemana() {\n    const x = new Date();\n    x.setHours(0, 0, 0, 0);\n    x.setDate(x.getDate() - x.getDay());\n    return [...Array(7)].map((_, i) => { const d = new Date(x); d.setDate(d.getDate() + i); return d; });\n}\nfunction iconeCena(t = \"\") {\n    const s = (t || \"\").toLowerCase();\n    if (s.includes(\"close\") || s.includes(\"rosto\") || s.includes(\"rea\u00e7\") || s.includes(\"react\"))\n        return \"\ud83d\ude2e\";\n    if (s.includes(\"game\") || s.includes(\"tela\") || s.includes(\"jogo\") || s.includes(\"print\"))\n        return \"\ud83c\udfae\";\n    if (s.includes(\"text\") || s.includes(\"legenda\"))\n        return \"\ud83d\udd24\";\n    if (s.includes(\"a\u00e7\") || s.includes(\"moviment\"))\n        return \"\u26a1\";\n    return \"\ud83c\udfac\";\n}\nfunction entregaTexto(e) {\n    if (!e)\n        return \"\";\n    const p = [];\n    if (e.reels)\n        p.push(`${e.reels} Reels`);\n    if (e.stories)\n        p.push(`${e.stories} Stories`);\n    if (e.longos)\n        p.push(`${e.longos} V\u00eddeo${e.longos > 1 ? \"s\" : \"\"} longo${e.longos > 1 ? \"s\" : \"\"}`);\n    return p.join(\" \u00b7 \");\n}\nfunction idadeDe(nasc) {\n    if (!nasc)\n        return \"\";\n    const d = new Date(nasc);\n    if (isNaN(d))\n        return \"\";\n    const hoje = new Date();\n    let i = hoje.getFullYear() - d.getFullYear();\n    const m = hoje.getMonth() - d.getMonth();\n    if (m < 0 || (m === 0 && hoje.getDate() < d.getDate()))\n        i--;\n    return i;\n}\nfunction statusCampanha(of) {\n    const cs = of.candidatos || [];\n    const conc = cs.filter((c) => c.status === \"concluido\").length;\n    const ativos = cs.filter((c) => [\"aprovado\", \"entregue\", \"concluido\"].includes(c.status)).length;\n    if ((of.qtd || 1) <= conc)\n        return { txt: \"Conclu\u00edda\", cor: \"var(--green)\", bg: \"rgba(62,224,163,.16)\" };\n    if (ativos > 0)\n        return { txt: \"Em andamento\", cor: \"var(--accent)\", bg: \"rgba(168,85,247,.16)\" };\n    return { txt: \"Aberta\", cor: \"var(--mute)\", bg: \"rgba(154,144,191,.16)\" };\n}\nfunction mediaNota(notas) {\n    const v = notas.filter((n) => n > 0);\n    if (!v.length)\n        return 0;\n    return Math.round((v.reduce((a, n) => a + n, 0) / v.length) * 10) / 10;\n}\nfunction StarRating({ value = 0, onRate, readOnly }) {\n    return (React.createElement(\"span\", { style: { display: \"inline-flex\", gap: 2 } }, [1, 2, 3, 4, 5].map((n) => (React.createElement(\"span\", { key: n, onClick: () => !readOnly && onRate && onRate(n), style: { cursor: readOnly ? \"default\" : \"pointer\", fontSize: 16, lineHeight: 1, color: n <= Math.round(value) ? \"#ffcf4d\" : \"#43392f\" } }, \"\\u2605\")))));\n}\nfunction NotifBell({ items, para, open, setOpen, onRead }) {\n    const meus = items.filter((i) => i.para === para);\n    const naoLidas = meus.filter((i) => !i.lida).length;\n    return (React.createElement(\"div\", { style: { position: \"relative\" } },\n        React.createElement(\"button\", { onClick: () => { setOpen(!open); if (!open)\n                onRead(); }, style: { position: \"relative\", background: \"none\", border: \"none\", color: C.mute, cursor: \"pointer\", lineHeight: 1, padding: 4 } },\n            React.createElement(Icon, { name: \"bell\", size: 21, stroke: 1.7 }),\n            naoLidas > 0 && React.createElement(\"span\", { style: { position: \"absolute\", top: 0, right: 0, background: C.rose, color: \"#fff\", fontSize: 9.5, fontWeight: 700, minWidth: 15, height: 15, borderRadius: 8, display: \"flex\", alignItems: \"center\", justifyContent: \"center\", padding: \"0 3px\", border: `1.5px solid ${C.bg}` } }, naoLidas)),\n        open && (React.createElement(React.Fragment, null,\n            React.createElement(\"div\", { onClick: () => setOpen(false), style: { position: \"fixed\", inset: 0, zIndex: 40 } }),\n            React.createElement(\"div\", { className: \"rise\", style: { position: \"absolute\", right: 0, top: 36, width: 270, maxWidth: \"80vw\", zIndex: 41, background: \"var(--card)\", border: `1px solid ${C.line}`, borderRadius: 12, boxShadow: \"0 10px 30px rgba(0,0,0,.5)\", overflow: \"hidden\" } },\n                React.createElement(\"div\", { style: { padding: \"10px 14px\", borderBottom: `1px solid ${C.line}`, fontSize: 12, letterSpacing: 1.5, color: C.amber, textTransform: \"uppercase\", fontWeight: 700 } }, \"Notifica\\u00E7\\u00F5es\"),\n                React.createElement(\"div\", { style: { maxHeight: 280, overflowY: \"auto\" } }, meus.length === 0 ? (React.createElement(\"p\", { style: { padding: \"18px 14px\", color: C.mute, fontSize: 13, textAlign: \"center\", margin: 0 } }, \"Nada por aqui ainda.\")) : meus.map((n) => (React.createElement(\"div\", { key: n.id, style: { padding: \"11px 14px\", borderBottom: `1px solid ${C.line}`, fontSize: 13, color: C.ink, lineHeight: 1.4 } }, n.text)))))))));\n}\nfunction PortfolioStrip({ videos }) {\n    if (!videos || !videos.length)\n        return null;\n    return (React.createElement(\"div\", { style: { display: \"flex\", gap: 8, overflowX: \"auto\", marginTop: 10, paddingBottom: 4 } }, videos.map((v) => (React.createElement(\"div\", { key: v.id, style: { flex: \"0 0 auto\", width: 104 } },\n        React.createElement(\"div\", { style: { height: 64, borderRadius: 9, background: v.cor || \"linear-gradient(135deg,#ff9d3d,#e87420)\", display: \"flex\", alignItems: \"center\", justifyContent: \"center\", fontSize: 22, color: \"#fff\", position: \"relative\" } },\n            \"\\u25B6\",\n            React.createElement(\"span\", { style: { position: \"absolute\", bottom: 4, right: 6, fontSize: 9, background: \"rgba(0,0,0,.45)\", padding: \"1px 5px\", borderRadius: 5 } }, v.plataforma)),\n        React.createElement(\"p\", { style: { fontSize: 10.5, color: C.ink, margin: \"4px 0 0\", lineHeight: 1.25, height: 26, overflow: \"hidden\" } }, v.titulo),\n        React.createElement(\"p\", { style: { fontSize: 10, color: C.mute, margin: 0 } },\n            (v.views || 0).toLocaleString(\"pt-BR\"),\n            \" views\"))))));\n}\nfunction ChatThread({ msgs, onSend, eu }) {\n    const [t, setT] = useState(\"\");\n    const send = () => { if (!t.trim())\n        return; onSend(t.trim()); setT(\"\"); };\n    return (React.createElement(\"div\", { style: { marginTop: 10, padding: 10, borderRadius: 11, background: \"var(--soft)\", border: `1px solid ${C.line}` } },\n        React.createElement(\"div\", { style: { maxHeight: 150, overflowY: \"auto\", display: \"flex\", flexDirection: \"column\", gap: 6, marginBottom: 8 } },\n            (!msgs || msgs.length === 0) && React.createElement(\"p\", { style: { fontSize: 12, color: C.mute, textAlign: \"center\", margin: \"8px 0\" } }, \"Sem mensagens. Diga ol\\u00E1 \\uD83D\\uDC4B\"),\n            (msgs || []).map((m, i) => (React.createElement(\"div\", { key: i, style: { alignSelf: m.from === eu ? \"flex-end\" : \"flex-start\", maxWidth: \"82%\", padding: \"7px 10px\", borderRadius: 11, fontSize: 13, lineHeight: 1.4,\n                    background: m.from === eu ? `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})` : C.card, color: m.from === eu ? \"var(--onAccent)\" : C.ink, border: m.from === eu ? \"none\" : `1px solid ${C.line}` } }, m.text)))),\n        React.createElement(\"div\", { style: { display: \"flex\", gap: 6 } },\n            React.createElement(\"input\", { value: t, onChange: (e) => setT(e.target.value), onKeyDown: (e) => e.key === \"Enter\" && send(), placeholder: \"Mensagem...\", style: { flex: 1, padding: \"10px 12px\", borderRadius: 9, border: `1px solid ${C.line}`, background: C.soft, color: C.ink, fontSize: 13.5, outline: \"none\", fontFamily: \"'DM Sans', sans-serif\" } }),\n            React.createElement(\"button\", { onClick: send, style: { padding: \"0 14px\", borderRadius: 9, border: \"none\", cursor: \"pointer\", fontSize: 16, background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: \"var(--onAccent)\" } }, \"\\u2191\"))));\n}\n// ---------- tela de login ----------\nfunction AuthScreen({ onAuth }) {\n    const [tela, setTela] = useState(\"escolha\"); // \"escolha\" | \"login\" | \"cadastro\"\n    const [papel, setPapel] = useState(null);\n    const [email, setEmail] = useState(\"\");\n    const [senha, setSenha] = useState(\"\");\n    const [confirmar, setConfirmar] = useState(\"\");\n    const [loading, setLoading] = useState(false);\n    const [msg, setMsg] = useState({ tipo: \"\", texto: \"\" });\n    const sb = window._sb;\n    async function entrarComGoogle() {\n        const sb = window._sb;\n        if (!sb) {\n            setMsg({ tipo: \"erro\", texto: \"Configure o Supabase primeiro.\" });\n            return;\n        }\n        const { error } = await sb.auth.signInWithOAuth({ provider: \"google\", options: { redirectTo: window.location.origin } });\n        if (error)\n            setMsg({ tipo: \"erro\", texto: \"Google n\u00e3o est\u00e1 habilitado ainda. Use e-mail por enquanto.\" });\n    }\n    async function entrarComFacebook() {\n        const sb = window._sb;\n        if (!sb) {\n            setMsg({ tipo: \"erro\", texto: \"Configure o Supabase primeiro.\" });\n            return;\n        }\n        await sb.auth.signInWithOAuth({ provider: \"facebook\", options: { redirectTo: window.location.origin } });\n    }\n    async function entrar() {\n        if (!email.trim() || !senha) {\n            setMsg({ tipo: \"erro\", texto: \"Preencha e-mail e senha.\" });\n            return;\n        }\n        setLoading(true);\n        setMsg({ tipo: \"\", texto: \"\" });\n        if (!sb) {\n            onAuth(papel || \"criador\");\n            return;\n        }\n        const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: senha });\n        setLoading(false);\n        if (error)\n            setMsg({ tipo: \"erro\", texto: \"E-mail ou senha incorretos.\" });\n    }\n    async function cadastrar() {\n        if (!papel) {\n            setMsg({ tipo: \"erro\", texto: \"Escolha seu perfil antes.\" });\n            return;\n        }\n        if (!email.trim() || !senha) {\n            setMsg({ tipo: \"erro\", texto: \"Preencha e-mail e senha.\" });\n            return;\n        }\n        if (senha.length < 6) {\n            setMsg({ tipo: \"erro\", texto: \"Senha m\u00ednima: 6 caracteres.\" });\n            return;\n        }\n        if (senha !== confirmar) {\n            setMsg({ tipo: \"erro\", texto: \"As senhas n\u00e3o coincidem.\" });\n            return;\n        }\n        setLoading(true);\n        setMsg({ tipo: \"\", texto: \"\" });\n        if (!sb) {\n            onAuth(papel);\n            return;\n        }\n        const refCode = localStorage.getItem(\"cria_ref\") || null;\n        const { error } = await sb.auth.signUp({\n            email: email.trim(), password: senha,\n            options: {\n                data: { papel, referido_por: refCode },\n                emailRedirectTo: window.location.origin, // volta pro app ap\u00f3s confirmar\n            }\n        });\n        setLoading(false);\n        if (error)\n            setMsg({ tipo: \"erro\", texto: error.message });\n        else\n            setMsg({ tipo: \"ok\", texto: \"\ud83d\udce7 Enviamos um e-mail de confirma\u00e7\u00e3o. Clique no link e voc\u00ea entrar\u00e1 automaticamente!\" });\n    }\n    const inp = { width: \"100%\", padding: \"13px 14px\", borderRadius: 11, border: `1px solid ${C.line}`, background: C.soft, color: C.ink, fontSize: 15, fontFamily: \"'DM Sans', sans-serif\", outline: \"none\", boxSizing: \"border-box\", marginBottom: 10 };\n    const GoogleBtn = ({ texto }) => (React.createElement(\"button\", { onClick: entrarComGoogle, style: { width: \"100%\", padding: \"13px\", borderRadius: 12, border: \"1px solid #dadce0\", cursor: \"pointer\", background: \"#fff\", color: \"#1a1a1a\", fontFamily: \"'DM Sans', sans-serif\", fontWeight: 700, fontSize: 14.5, display: \"flex\", alignItems: \"center\", justifyContent: \"center\", gap: 10, marginBottom: 12 } },\n        React.createElement(\"svg\", { width: \"20\", height: \"20\", viewBox: \"0 0 24 24\" },\n            React.createElement(\"path\", { fill: \"#4285F4\", d: \"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\" }),\n            React.createElement(\"path\", { fill: \"#34A853\", d: \"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\" }),\n            React.createElement(\"path\", { fill: \"#FBBC05\", d: \"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z\" }),\n            React.createElement(\"path\", { fill: \"#EA4335\", d: \"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z\" })),\n        texto));\n    return (React.createElement(\"div\", { style: { maxWidth: 420, margin: \"0 auto\", minHeight: \"100dvh\", display: \"flex\", flexDirection: \"column\", justifyContent: \"center\", padding: \"30px 22px\", backgroundImage: `radial-gradient(circle at 50% 0%, rgba(168,85,247,.18), transparent 55%)` } },\n        React.createElement(\"div\", { style: { textAlign: \"center\", marginBottom: 26 } },\n            React.createElement(\"div\", { style: { width: 66, height: 66, margin: \"0 auto 16px\", filter: \"drop-shadow(0 10px 26px rgba(168,85,247,.45))\" } },\n                React.createElement(LogoMark, { size: 66 })),\n            React.createElement(Wordmark, { size: 42, gradient: true }),\n            React.createElement(\"p\", { style: { color: C.mute, fontSize: 14.5, margin: \"8px 0 0\" } }, \"Onde criador vira neg\\u00F3cio. Bora? \\uD83D\\uDE80\")),\n        tela === \"escolha\" && (React.createElement(React.Fragment, null,\n            React.createElement(\"p\", { style: { textAlign: \"center\", fontWeight: 700, fontSize: 15, color: C.ink, marginBottom: 14 } }, \"Como voc\\u00EA vai usar o Cria?\"),\n            [[\"criador\", \"\ud83c\udfac\", \"Sou Criador de Conte\u00fado\", \"Pautas, roteiros, colabs e campanhas com marcas\"], [\"marca\", \"\ud83c\udfe2\", \"Sou uma Marca / Empresa\", \"Contratar criadores e divulgar meus produtos\"]].map(([id, emoji, titulo, desc]) => (React.createElement(\"button\", { key: id, onClick: () => { setPapel(id); setTela(\"cadastro\"); }, style: { width: \"100%\", textAlign: \"left\", padding: \"16px\", borderRadius: 14, marginBottom: 10, cursor: \"pointer\", border: `1px solid ${C.line}`, background: C.card, fontFamily: \"'DM Sans',sans-serif\", display: \"flex\", gap: 12, alignItems: \"center\" } },\n                React.createElement(\"span\", { style: { fontSize: 28, flexShrink: 0 } }, emoji),\n                React.createElement(\"span\", null,\n                    React.createElement(\"span\", { className: \"disp\", style: { display: \"block\", fontSize: 15.5, fontWeight: 700, color: C.ink } }, titulo),\n                    React.createElement(\"span\", { style: { display: \"block\", fontSize: 12.5, color: C.mute, marginTop: 2 } }, desc)),\n                React.createElement(\"span\", { style: { marginLeft: \"auto\", color: C.mute, fontSize: 18 } }, \"\\u203A\")))),\n            React.createElement(\"div\", { style: { display: \"flex\", alignItems: \"center\", gap: 10, margin: \"14px 0\" } },\n                React.createElement(\"div\", { style: { flex: 1, height: 1, background: C.line } }),\n                React.createElement(\"span\", { style: { color: C.mute, fontSize: 12 } }, \"j\\u00E1 tenho conta\"),\n                React.createElement(\"div\", { style: { flex: 1, height: 1, background: C.line } })),\n            React.createElement(\"button\", { onClick: () => setTela(\"login\"), style: { width: \"100%\", padding: \"13px\", borderRadius: 12, border: `1px solid ${C.line}`, cursor: \"pointer\", background: \"transparent\", color: C.ink, fontFamily: \"'DM Sans',sans-serif\", fontWeight: 700, fontSize: 14.5 } }, \"Entrar na minha conta\"))),\n        tela === \"cadastro\" && (React.createElement(React.Fragment, null,\n            React.createElement(\"button\", { onClick: () => { setTela(\"escolha\"); setMsg({ tipo: \"\", texto: \"\" }); }, style: { background: \"none\", border: \"none\", color: C.mute, fontSize: 13, cursor: \"pointer\", padding: \"0 0 14px\", alignSelf: \"flex-start\" } }, \"\\u2190 Voltar\"),\n            React.createElement(\"div\", { style: { padding: \"10px 14px\", borderRadius: 10, background: \"rgba(168,85,247,.1)\", border: `1px solid ${C.amber}`, marginBottom: 16, display: \"flex\", alignItems: \"center\", gap: 10 } },\n                React.createElement(\"span\", { style: { fontSize: 22 } }, papel === \"criador\" ? \"\ud83c\udfac\" : \"\ud83c\udfe2\"),\n                React.createElement(\"span\", { style: { fontSize: 13.5, fontWeight: 700, color: C.amber } }, papel === \"criador\" ? \"Criador de Conte\u00fado\" : \"Marca / Empresa\")),\n            React.createElement(GoogleBtn, { texto: `Cadastrar como ${papel === \"criador\" ? \"Criador\" : \"Marca\"} com Google` }),\n            React.createElement(\"div\", { style: { display: \"flex\", alignItems: \"center\", gap: 10, marginBottom: 12 } },\n                React.createElement(\"div\", { style: { flex: 1, height: 1, background: C.line } }),\n                React.createElement(\"span\", { style: { color: C.mute, fontSize: 12 } }, \"ou com e-mail\"),\n                React.createElement(\"div\", { style: { flex: 1, height: 1, background: C.line } })),\n            React.createElement(\"input\", { style: inp, type: \"email\", placeholder: \"Seu e-mail\", value: email, onChange: e => setEmail(e.target.value) }),\n            React.createElement(\"input\", { style: inp, type: \"password\", placeholder: \"Senha (m\\u00EDn. 6 caracteres)\", value: senha, onChange: e => setSenha(e.target.value) }),\n            React.createElement(\"input\", { style: inp, type: \"password\", placeholder: \"Confirmar senha\", value: confirmar, onChange: e => setConfirmar(e.target.value) }),\n            msg.texto && React.createElement(\"p\", { style: { fontSize: 13, color: msg.tipo === \"ok\" ? C.green : C.rose, margin: \"0 0 12px\", lineHeight: 1.5 } }, msg.texto),\n            React.createElement(\"button\", { onClick: cadastrar, disabled: loading, style: { width: \"100%\", padding: \"14px\", borderRadius: 12, border: \"none\", cursor: loading ? \"default\" : \"pointer\", background: loading ? C.mute : `linear-gradient(135deg,${C.amber},${C.amberDeep})`, color: \"var(--onAccent)\", fontFamily: \"'DM Sans',sans-serif\", fontWeight: 700, fontSize: 14.5 } }, loading ? \"Criando conta...\" : \"Criar conta\"),\n            React.createElement(\"p\", { style: { textAlign: \"center\", marginTop: 14, fontSize: 13.5, color: C.mute } },\n                \"J\\u00E1 tem conta? \",\n                React.createElement(\"button\", { onClick: () => setTela(\"login\"), style: { background: \"none\", border: \"none\", color: C.amber, cursor: \"pointer\", fontWeight: 700, fontSize: 13.5, padding: 0 } }, \"Entrar\")))),\n        tela === \"login\" && (React.createElement(React.Fragment, null,\n            React.createElement(\"button\", { onClick: () => { setTela(\"escolha\"); setMsg({ tipo: \"\", texto: \"\" }); }, style: { background: \"none\", border: \"none\", color: C.mute, fontSize: 13, cursor: \"pointer\", padding: \"0 0 14px\", alignSelf: \"flex-start\" } }, \"\\u2190 Voltar\"),\n            React.createElement(GoogleBtn, { texto: \"Entrar com Google\" }),\n            React.createElement(\"div\", { style: { display: \"flex\", alignItems: \"center\", gap: 10, marginBottom: 12 } },\n                React.createElement(\"div\", { style: { flex: 1, height: 1, background: C.line } }),\n                React.createElement(\"span\", { style: { color: C.mute, fontSize: 12 } }, \"ou com e-mail\"),\n                React.createElement(\"div\", { style: { flex: 1, height: 1, background: C.line } })),\n            React.createElement(\"input\", { style: inp, type: \"email\", placeholder: \"Seu e-mail\", value: email, onChange: e => setEmail(e.target.value) }),\n            React.createElement(\"input\", { style: inp, type: \"password\", placeholder: \"Sua senha\", value: senha, onChange: e => setSenha(e.target.value) }),\n            msg.texto && React.createElement(\"p\", { style: { fontSize: 13, color: msg.tipo === \"ok\" ? C.green : C.rose, margin: \"0 0 12px\", lineHeight: 1.5 } }, msg.texto),\n            React.createElement(\"button\", { onClick: entrar, disabled: loading, style: { width: \"100%\", padding: \"14px\", borderRadius: 12, border: \"none\", cursor: loading ? \"default\" : \"pointer\", background: loading ? C.mute : `linear-gradient(135deg,${C.amber},${C.amberDeep})`, color: \"var(--onAccent)\", fontFamily: \"'DM Sans',sans-serif\", fontWeight: 700, fontSize: 14.5 } }, loading ? \"Entrando...\" : \"Entrar\"),\n            React.createElement(\"p\", { style: { textAlign: \"center\", marginTop: 14, fontSize: 13.5, color: C.mute } },\n                \"N\\u00E3o tem conta? \",\n                React.createElement(\"button\", { onClick: () => setTela(\"escolha\"), style: { background: \"none\", border: \"none\", color: C.amber, cursor: \"pointer\", fontWeight: 700, fontSize: 13.5, padding: 0 } }, \"Cadastrar\"))))));\n}\nconst PLANOS = [\n    { id: \"Gr\u00e1tis\", preco: \"R$ 0\", linha: \"2 pautas por semana\", cor: C.mute, limiteSemana: 2, nivel: 0 },\n    { id: \"Criador\", preco: \"R$ 59,90/m\u00eas\", linha: \"4 pautas/semana \u00b7 roteiros extras \u00b7 colab, produtos e parcerias com marcas\", cor: C.amber, limiteSemana: 4, nivel: 1 },\n    { id: \"Pro\", preco: \"R$ 99,90/m\u00eas\", linha: \"7 pautas/semana \u00b7 roteiros e dicas extras \u00b7 destaque pras marcas (aparece primeiro) + tudo liberado\", cor: C.rose, limiteSemana: 7, nivel: 2 },\n];\n// leitor tolerante: l\u00ea o JSON; se vier cortado, salva o que chegou\nfunction lerJSON(raw) {\n    const limpo = raw.replace(/```json|```/g, \"\").trim();\n    try {\n        return JSON.parse(limpo.slice(limpo.indexOf(\"{\"), limpo.lastIndexOf(\"}\") + 1));\n    }\n    catch (_) { }\n    const posts = [];\n    const a = limpo.indexOf(\"[\");\n    if (a !== -1) {\n        let d = 0, s = -1;\n        for (let i = a; i < limpo.length; i++) {\n            const c = limpo[i];\n            if (c === \"{\") {\n                if (d === 0)\n                    s = i;\n                d++;\n            }\n            else if (c === \"}\") {\n                d--;\n                if (d === 0 && s !== -1) {\n                    try {\n                        posts.push(JSON.parse(limpo.slice(s, i + 1)));\n                    }\n                    catch (_) { }\n                    s = -1;\n                }\n            }\n        }\n    }\n    const foco = limpo.match(/\"foco_do_dia\"\\s*:\\s*\"([^\"]*)\"/);\n    return { foco_do_dia: foco ? foco[1] : \"\", posts };\n}\nasync function chamarIA({ system, messages }) {\n    const r = await fetch(\"/api/claude\", {\n        method: \"POST\", headers: { \"Content-Type\": \"application/json\" },\n        body: JSON.stringify({ model: \"claude-haiku-4-5-20251001\", max_tokens: 1000, system, messages }),\n    });\n    const j = await r.json();\n    if (j.type === \"error\") {\n        const tipo = j.error?.type || \"\";\n        if (tipo === \"rate_limit_error\")\n            throw new Error(\"RATE_LIMIT\");\n        if (tipo === \"overloaded_error\")\n            throw new Error(\"SOBRECARGA\");\n        throw new Error(\"Erro da IA: \" + (j.error?.message || tipo).slice(0, 120));\n    }\n    const txt = (j.content || []).map((b) => (b.type === \"text\" ? b.text : \"\")).join(\"\\n\");\n    if (!txt)\n        throw new Error(\"Resposta vazia: \" + JSON.stringify(j).slice(0, 120));\n    return txt;\n}\nconst HOLD_DIAS = 7; // dias de reten\u00e7\u00e3o (CDC: 7 dias de arrependimento para compras online)\nfunction App() {\n    const [profile, setProfile] = useState({ nome: \"\", foto: \"\", genero: \"\", nascimento: \"\", nicho: \"\", plataformas: [], formato: [], objetivo: [], tom: [], freq: \"\", seguidores: \"\", publico: \"\", handles: {}, portfolio_links: [], loja_banner: \"\", loja_descricao: \"\" });\n    const setupOk = profile.nome && profile.nascimento && profile.nicho && profile.plataformas.length && profile.formato.length && profile.objetivo.length && profile.tom.length && profile.freq && profile.seguidores;\n    const [tab, setTab] = useState(\"dashboard\");\n    const [selectedDay, setSelectedDay] = useState(new Date().getDay());\n    const [dias, setDias] = useState({}); // { [nomeDia]: {loading, erro, data} }\n    const [chat, setChat] = useState([]);\n    const [desempenho, setDesempenho] = useState({}); // { \"Dia|idx\": \"bombou\" | \"medio\" | \"fraco\" }\n    const [ajustes, setAjustes] = useState([]); // instru\u00e7\u00f5es permanentes pedidas no chat\n    const [ofertas, setOfertas] = useState([]); // campanhas publicadas por marcas\n    const [mensagens, setMensagens] = useState({}); // { \"ofId|nomeCriador\": [{from, text, t}] }\n    const addMsg = (ofId, nome, from, text) => setMensagens((m) => {\n        const k = `${ofId}|${nome}`;\n        return { ...m, [k]: [...(m[k] || []), { from, text, t: Date.now() }] };\n    });\n    const [notificacoes, setNotificacoes] = useState([]); // { id, para: 'criador'|'marca', text, lida }\n    const [notifOpen, setNotifOpen] = useState(false);\n    const notify = (para, text) => setNotificacoes((n) => [{ id: Date.now() + Math.random(), para, text, lida: false }, ...n]);\n    const [marcaProfile, setMarcaProfile] = useState({ logo: \"\", banner: \"\", nome: \"\", segmento: \"\", sobre: \"\", site: \"\", categorias: [] });\n    const [authed, setAuthed] = useState(false);\n    const [papel, setPapel] = useState(\"criador\");\n    const [sbUid, setSbUid] = useState(null);\n    const [sbLoad, setSbLoad] = useState(false);\n    const [profileLoading, setProfileLoading] = useState(false);\n    const [perfilLoad, setPerfilLoad] = useState(false);\n    // AUTO-SAVE rascunhos no localStorage\n    useEffect(() => {\n        const timer = setTimeout(() => {\n            try {\n                localStorage.setItem(\"cria_draft_profile\", JSON.stringify(profile));\n                if (papel === \"marca\")\n                    localStorage.setItem(\"cria_draft_marca\", JSON.stringify(marcaProfile));\n            }\n            catch (e) { }\n        }, 1500); // debounce de 1.5s\n        return () => clearTimeout(timer);\n    }, [profile, marcaProfile, papel]);\n    // RESTAURAR rascunho se perfil n\u00e3o est\u00e1 salvo no banco ainda\n    useEffect(() => {\n        if (!authed || !window._sb)\n            return;\n        const draftProfile = localStorage.getItem(\"cria_draft_profile\");\n        const draftMarca = localStorage.getItem(\"cria_draft_marca\");\n        if (draftProfile && !profile.nome) {\n            try {\n                setProfile(JSON.parse(draftProfile));\n            }\n            catch (e) { }\n        }\n        if (draftMarca && papel === \"marca\" && !marcaProfile.nome) {\n            try {\n                setMarcaProfile(JSON.parse(draftMarca));\n            }\n            catch (e) { }\n        }\n    }, [authed]);\n    useEffect(() => {\n        const ref = new URLSearchParams(window.location.search).get(\"ref\");\n        if (ref)\n            localStorage.setItem(\"cria_ref\", ref);\n    }, []);\n    // Sess\u00e3o Supabase \u2014 checa login salvo e escuta mudan\u00e7as\n    useEffect(() => {\n        const sb = window._sb;\n        if (!sb) {\n            setSbLoad(false);\n            setPerfilLoad(false);\n            return;\n        }\n        // Timeout de seguran\u00e7a: SEMPRE para o loading ap\u00f3s 4s, n\u00e3o importa o que aconte\u00e7a\n        const timeout = setTimeout(() => {\n            console.warn(\"Timeout: for\u00e7ando loading=false\");\n            setSbLoad(false);\n            setPerfilLoad(false);\n        }, 4000);\n        sb.auth.getSession().then(function (res) {\n            var session = res && res.data && res.data.session;\n            clearTimeout(timeout);\n            if (session) {\n                setAuthed(true);\n                setSbUid(session.user.id);\n                var p = (session.user.user_metadata && session.user.user_metadata.papel) || \"criador\";\n                setPapel(p);\n                carregarPerfilSb(session.user.id);\n            }\n            else {\n                setPerfilLoad(false);\n            }\n            setSbLoad(false);\n        }).catch(function (err) {\n            console.error(\"getSession erro:\", err);\n            clearTimeout(timeout);\n            setSbLoad(false);\n            setPerfilLoad(false);\n        });\n        var sub = sb.auth.onAuthStateChange(function (event, session) {\n            if (event === \"SIGNED_IN\") {\n                setAuthed(true);\n                if (session) {\n                    setSbUid(session.user.id);\n                    var p = (session.user.user_metadata && session.user.user_metadata.papel) || \"criador\";\n                    setPapel(p);\n                    carregarPerfilSb(session.user.id);\n                }\n            }\n            else if (event === \"TOKEN_REFRESHED\" && session) {\n                setAuthed(true);\n                setSbUid(session.user.id);\n            }\n            else if (!session) {\n                setAuthed(false);\n                setSbUid(null);\n                setPerfilLoad(false);\n            }\n        });\n        return function () { sub.data && sub.data.subscription && sub.data.subscription.unsubscribe(); };\n    }, []);\n    async function carregarPerfilSb(uid) {\n        setPerfilLoad(true);\n        const sb = window._sb;\n        if (!sb) {\n            setPerfilLoad(false);\n            return;\n        }\n        try {\n            const { data } = await sb.from(\"profiles\").select(\"*\").eq(\"id\", uid).single();\n            if (!data) {\n                setPerfilLoad(false);\n                return;\n            }\n            setProfile({ nome: data.nome || \"\", foto: data.foto_url || \"\", genero: data.genero || \"\", nascimento: data.nascimento || \"\", nicho: data.nicho || \"\", plataformas: data.plataformas || [], formato: data.formatos || [], objetivo: data.objetivos || [], tom: data.tons || [], freq: data.frequencia || \"\", seguidores: data.seguidores || \"\", publico: data.publico || \"\", handles: data.handles || {}, portfolio_links: data.portfolio_links || [] });\n            if (data.papel)\n                setPapel(data.papel);\n            if (data.plano && data.plano !== \"Gr\u00e1tis\") {\n                const vence = data.plano_vence ? new Date(data.plano_vence) : null;\n                const ativo = vence && vence > new Date();\n                setPlano(ativo ? data.plano : \"Gr\u00e1tis\");\n                if (!ativo && data.plano !== \"Gr\u00e1tis\")\n                    await sb.from(\"profiles\").update({ plano: \"Gr\u00e1tis\" }).eq(\"id\", uid);\n            }\n            if (data.marca_data) {\n                try {\n                    const md = JSON.parse(data.marca_data);\n                    setMarcaProfile(md);\n                    // Restaurar produtos salvos da marca\n                    if (md._produtos && md._produtos.length > 0) {\n                        setProdutos(prev => {\n                            const outros = prev.filter(p => p.dono !== md.nome);\n                            return [...md._produtos, ...outros];\n                        });\n                    }\n                }\n                catch (e) { }\n            }\n            if (data.indicados)\n                setIndicados(data.indicados);\n            if (data.sacado)\n                setSacado(data.sacado);\n        }\n        catch (e) {\n            console.error(\"Erro ao carregar perfil:\", e);\n        }\n        finally {\n            setPerfilLoad(false);\n        }\n    }\n    async function salvarPerfilSb(novoProfile) {\n        const sb = window._sb;\n        if (!sb || !sbUid)\n            return;\n        // colunas base \u2014 existem no schema original\n        const dados = {\n            papel,\n            nome: novoProfile.nome || null,\n            foto_url: novoProfile.foto || null,\n            genero: novoProfile.genero || null,\n            nascimento: novoProfile.nascimento || null,\n            nicho: novoProfile.nicho || null,\n            plataformas: novoProfile.plataformas || [],\n            formatos: novoProfile.formato || [],\n            objetivos: novoProfile.objetivo || [],\n            tons: novoProfile.tom || [],\n            frequencia: novoProfile.freq || null,\n            seguidores: novoProfile.seguidores || null,\n            publico: novoProfile.publico || null,\n            updated_at: new Date().toISOString(),\n        };\n        // colunas extras (da migra\u00e7\u00e3o) \u2014 adiciona se existirem\n        if (novoProfile.handles)\n            dados.handles = novoProfile.handles;\n        if (novoProfile.portfolio_links)\n            dados.portfolio_links = novoProfile.portfolio_links;\n        if (novoProfile.loja_banner !== undefined)\n            dados.loja_banner = novoProfile.loja_banner;\n        if (novoProfile.loja_descricao !== undefined)\n            dados.loja_descricao = novoProfile.loja_descricao;\n        const { error } = await sb.from(\"profiles\").update(dados).eq(\"id\", sbUid);\n        if (error)\n            console.error(\"Erro ao salvar perfil:\", error.message);\n        else\n            console.log(\"\u2705 Perfil salvo no Supabase\");\n    }\n    async function salvarLojasSb(novoMarcaProfile) {\n        const sb = window._sb;\n        if (!sb || !sbUid)\n            return;\n        await sb.from(\"profiles\").update({ marca_data: JSON.stringify(novoMarcaProfile) }).eq(\"id\", sbUid);\n        localStorage.setItem(\"cria_draft_marca\", JSON.stringify(novoMarcaProfile));\n    }\n    async function setPlanoComSync(p) {\n        setPlano(p);\n        const sb = window._sb;\n        if (!sb || !sbUid)\n            return;\n        await sb.from(\"profiles\").update({ plano: p }).eq(\"id\", sbUid);\n    }\n    const [menuOpen, setMenuOpen] = useState(false);\n    const [tema, setTema] = useState(\"dark\");\n    const [plano, setPlano] = useState(\"Gr\u00e1tis\");\n    const [uso, setUso] = useState({ semana: chaveSemana(), n: 0 });\n    const [indicados, setIndicados] = useState(0);\n    const [sacado, setSacado] = useState(0);\n    const [arquivados, setArquivados] = useState([]); // hist\u00f3rico de todas as pautas geradas\n    const [colabs, setColabs] = useState([]);\n    const [produtos, setProdutos] = useState([]);\n    const [vendas, setVendas] = useState([]);\n    // AUTO-SAVE produtos da marca no Supabase (ap\u00f3s produtos declarado)\n    useEffect(() => {\n        if (papel !== \"marca\" || !sbUid || !marcaProfile.nome)\n            return;\n        const meusProd = produtos.filter(p => p.dono === marcaProfile.nome);\n        const timer = setTimeout(() => {\n            salvarLojasSb({ ...marcaProfile, _produtos: meusProd });\n        }, 1500);\n        return () => clearTimeout(timer);\n    }, [produtos, papel, sbUid]);\n    const hoje = new Date().getDay();\n    const planoAtual = PLANOS.find((p) => p.id === plano) || PLANOS[0];\n    const limiteSemana = planoAtual.limiteSemana;\n    const planoNivel = planoAtual.nivel;\n    const usosSemana = uso.semana === chaveSemana() ? uso.n : 0;\n    const datasSemana = datasDaSemana();\n    const jaFez = chat.filter((m) => m.role === \"user\").slice(-4).map((m) => m.text).join(\"; \");\n    function resumoDesempenho() {\n        const bom = [], ruim = [];\n        Object.entries(desempenho).forEach(([k, r]) => {\n            const [d, ix] = k.split(\"|\");\n            const post = dias[d]?.data?.posts?.[Number(ix)];\n            if (!post)\n                return;\n            const label = `${post.formato}: ${post.tema}`;\n            if (r === \"bombou\")\n                bom.push(label);\n            else if (r === \"fraco\")\n                ruim.push(label);\n        });\n        return { bom, ruim };\n    }\n    const dp = resumoDesempenho();\n    const formatosTop = [...new Set(dp.bom.map((s) => s.split(\":\")[0]))];\n    function perfilTexto() {\n        return `- Nicho: ${profile.nicho}\n- Redes: ${profile.plataformas.join(\", \")}\n- Formatos que produz: ${profile.formato.join(\", \")}\n- Objetivos (MESCLE todos no mesmo dia): ${profile.objetivo.join(\", \")}\n- Tom (mescle os escolhidos): ${profile.tom.join(\", \")}\n- Frequ\u00eancia: ${profile.freq}\n- Tamanho da audi\u00eancia: ${profile.seguidores}\n- Idade do criador: ${idadeDe(profile.nascimento) || \"?\"} anos\n- P\u00fablico principal: ${profile.publico || \"n\u00e3o informado\"}`;\n    }\n    const pautasGeradas = Object.values(dias).filter((v) => v?.data).length;\n    const bombouCount = Object.values(desempenho).filter((r) => r === \"bombou\").length;\n    const xp = pautasGeradas * 10 + bombouCount * 25;\n    const nivel = Math.floor(xp / 100) + 1;\n    const xpNoNivel = xp % 100;\n    const meuNome = profile.nome || \"Criador\";\n    const isDisponivel = (data) => {\n        if (!data)\n            return false;\n        const d = new Date(data);\n        d.setDate(d.getDate() + HOLD_DIAS);\n        return d <= new Date();\n    };\n    let ganhoLiberado = 0, ganhoPendente = 0, ganhoEmAnalise = 0;\n    ofertas.forEach((of) => (of.candidatos || []).forEach((c) => {\n        if (c.nome !== meuNome)\n            return;\n        const base = (of.valor || 0) * (1 - TAXA_PLATAFORMA);\n        const bonusLiq = (of.bonus || 0) * (1 - TAXA_PLATAFORMA);\n        if (c.status === \"concluido\") {\n            if (isDisponivel(c.concluido_em)) {\n                ganhoLiberado += base;\n                if (c.bonusLiberado)\n                    ganhoLiberado += bonusLiq;\n                else if (of.meta > 0 && c.resultado == null)\n                    ganhoPendente += bonusLiq;\n            }\n            else {\n                ganhoEmAnalise += base + (c.bonusLiberado ? bonusLiq : 0);\n            }\n        }\n        else if (c.status === \"aprovado\" || c.status === \"entregue\") {\n            ganhoPendente += base + (of.meta > 0 ? bonusLiq : 0);\n        }\n    }));\n    const liquido = (v) => v.preco * (1 - TAXA_PRODUTO);\n    const ganhoAfiliado = (vendas || []).filter((v) => v.afiliado === meuNome).reduce((s, v) => s + liquido(v) * v.comissao / 100, 0);\n    const ganhoDonoProd = (vendas || []).filter((v) => v.dono === meuNome).reduce((s, v) => s + (v.afiliado ? liquido(v) * (1 - v.comissao / 100) : liquido(v)), 0);\n    const ganhoProdutos = ganhoAfiliado + ganhoDonoProd;\n    const ganhoIndicacao = indicados * (99.9 * 0.40);\n    const totalGanho = ganhoLiberado + ganhoProdutos + ganhoIndicacao;\n    const totalEmAnalise = ganhoEmAnalise + (ganhoProdutos > 0 ? 0 : 0); // produtos s\u00e3o liberados imediatamente (sem escrow)\n    async function gerarDia(diaIdx) {\n        const nome = DIAS[diaIdx];\n        const atual = dias[nome] || {};\n        const existe = !!atual.data;\n        const refeitos = atual.refeitos || 0;\n        const ehRedoGratis = existe && refeitos < 1; // 1 refa\u00e7\u00e3o gr\u00e1tis por pauta\n        // dia que j\u00e1 passou nesta semana n\u00e3o gera\n        if (diaIdx < hoje) {\n            setDias((o) => ({ ...o, [nome]: { loading: false, erro: `${nome} j\u00e1 passou nesta semana. Gere para hoje ou os pr\u00f3ximos dias.`, data: null } }));\n            return;\n        }\n        // limite semanal do plano (n\u00e3o acumula \u2014 zera toda semana). Refa\u00e7\u00e3o gr\u00e1tis n\u00e3o consome uso.\n        if (!ehRedoGratis && usosSemana >= limiteSemana) {\n            setDias((o) => ({ ...o, [nome]: { loading: false, erro: `LIMITE`, data: null, refeitos } }));\n            return;\n        }\n        setDias((o) => ({ ...o, [nome]: { loading: true, erro: null, data: null } }));\n        const qtdPosts = planoNivel >= 2 ? \"3 a 4\" : planoNivel >= 1 ? \"2 a 3\" : \"exatamente 2\";\n        const dicaExtra = planoNivel >= 2 ? `Para cada post, inclua tamb\u00e9m o campo \"dica\" com uma dica curta de distribui\u00e7\u00e3o/algoritmo.` : \"\";\n        const outros = Object.entries(dias)\n            .filter(([k, v]) => k !== nome && v?.data?.posts?.length)\n            .flatMap(([, v]) => v.data.posts.map((p) => p.tema))\n            .join(\"; \");\n        const prompt = `Perfil do criador:\n${perfilTexto()}\n\nMonte a PAUTA DE ${nome.toUpperCase()}. Pense no que costuma bombar nesse nicho e no que pode estar em alta por volta desse dia (tend\u00eancias sazonais, lan\u00e7amentos, e como o p\u00fablico se comporta nesse dia da semana). Respeite a frequ\u00eancia: em dias de menor produ\u00e7\u00e3o, sugira formatos leves (story, enquete).\n\nListe TUDO que a pessoa deve postar nesse dia \u2014 pode misturar formatos (Reels, Story, V\u00eddeo longo, etc.) \u2014 sempre alinhado aos objetivos dela.\n${outros ? `N\u00c3O repita estes temas j\u00e1 planejados: ${outros}.` : \"\"}\n${jaFez ? `O criador j\u00e1 fez recentemente (n\u00e3o repita): ${jaFez}.` : \"\"}\n${dp.bom.length ? `O que BOMBOU pra esse criador (priorize formatos/abordagens parecidos): ${dp.bom.join(\"; \")}.` : \"\"}\n${dp.ruim.length ? `O que foi FRACO (evite esse tipo): ${dp.ruim.join(\"; \")}.` : \"\"}\n${ajustes.length ? `AJUSTES que o criador pediu \u2014 siga \u00e0 risca em TODAS as pautas: ${ajustes.join(\"; \")}.` : \"\"}\n\nResponda APENAS com JSON v\u00e1lido, sem texto extra e sem markdown. Seja CONCISO (frases curtas, roteiro at\u00e9 3 passos). Para cada post inclua um \"storyboard\" de 2 a 3 quadros descrevendo o que mostrar na tela em cada cena (N\u00c3O gere imagens, s\u00f3 a descri\u00e7\u00e3o visual). ${dicaExtra} Gere ${qtdPosts} posts:\n{\n  \"foco_do_dia\": \"1 frase com a inten\u00e7\u00e3o do dia\",\n  \"posts\": [\n    { \"formato\": \"Reels\", \"tema\": \"...\", \"gancho\": \"...\", \"roteiro\": [\"passo 1\", \"passo 2\", \"passo 3\"], \"storyboard\": [{\"tipo\": \"ex: close / gameplay / rea\u00e7\u00e3o\", \"cena\": \"o que aparece na tela\", \"texto_tela\": \"texto sobreposto na cena\"}], \"cta\": \"...\", \"melhor_horario\": \"ex: 19h\", \"hashtags\": [\"#...\"] }\n  ]\n}`;\n        try {\n            const txt = await chamarIA({\n                system: \"Voc\u00ea \u00e9 um estrategista de conte\u00fado que entrega pautas prontas. Sempre responde s\u00f3 com JSON v\u00e1lido, sem markdown.\",\n                messages: [{ role: \"user\", content: prompt }],\n            });\n            const data = lerJSON(txt);\n            if (!data.posts || data.posts.length === 0)\n                throw new Error(\"N\u00e3o veio nenhum post completo. Toca em gerar outro.\");\n            setDias((o) => ({ ...o, [nome]: { loading: false, erro: null, data, refeitos: existe ? refeitos + 1 : 0 } }));\n            setArquivados((a) => [{ id: Date.now(), dia: nome, data: new Date().toISOString(), foco: data.foco_do_dia, posts: data.posts }, ...a]);\n            if (!ehRedoGratis)\n                setUso((u) => { const wk = chaveSemana(); const base = u.semana === wk ? u.n : 0; return { semana: wk, n: base + 1 }; });\n        }\n        catch (e) {\n            const msg = String(e.message || e);\n            const erroFinal = msg === \"RATE_LIMIT\" ? \"RATE_LIMIT\"\n                : msg === \"SOBRECARGA\" ? \"A IA est\u00e1 sobrecarregada agora. Aguarde 1 minuto e tente de novo.\"\n                    : msg;\n            setDias((o) => ({ ...o, [nome]: { loading: false, erro: erroFinal, data: null, refeitos } }));\n        }\n    }\n    function selecionarDia(idx) {\n        setSelectedDay(idx);\n        const nome = DIAS[idx];\n        if (!dias[nome])\n            gerarDia(idx);\n    }\n    return (React.createElement(\"div\", { \"data-theme\": tema, style: { minHeight: \"100vh\", background: C.bg, color: C.ink, fontFamily: \"'DM Sans', sans-serif\", transition: \"background .3s\" } },\n        React.createElement(\"button\", { onClick: () => setTema((t) => t === \"dark\" ? \"light\" : \"dark\"), title: \"Alternar tema\", style: { position: \"fixed\", left: 16, bottom: 18, zIndex: 50, width: 38, height: 38, borderRadius: \"50%\", border: `1px solid ${C.line}`, background: C.card, color: C.mute, cursor: \"pointer\", display: \"flex\", alignItems: \"center\", justifyContent: \"center\", opacity: .85 } },\n            React.createElement(Icon, { name: tema === \"dark\" ? \"sol\" : \"lua\", size: 18, stroke: 1.7 })),\n        React.createElement(\"style\", null, `\n        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');\n        [data-theme=\"dark\"]{\n          --bg:#0e0a1a; --card:#191230; --soft:#150f28; --line:#2c2348;\n          --ink:#f2efff; --mute:#9a90bf;\n          --accent:#a855f7; --accent2:#7c3aed; --rose:#ff5d8f; --green:#3ee0a3; --onAccent:#ffffff;\n        }\n        [data-theme=\"light\"]{\n          --bg:#f6f3fc; --card:#ffffff; --soft:#f1ecfa; --line:#e6dff5;\n          --ink:#1b1430; --mute:#6c6390;\n          --accent:#7c3aed; --accent2:#9333ea; --rose:#e0356f; --green:#10a877; --onAccent:#ffffff;\n        }\n        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}\n        @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}\n        @keyframes spin{to{transform:rotate(360deg)}}\n        @keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}\n        .rise{animation:rise .4s ease both}\n        .disp{font-family:'Bricolage Grotesque',sans-serif}\n        .noscroll::-webkit-scrollbar{display:none}\n      `),\n        (sbLoad || perfilLoad) ? (React.createElement(\"div\", { style: { minHeight: \"100dvh\", display: \"flex\", flexDirection: \"column\", alignItems: \"center\", justifyContent: \"center\", background: \"var(--bg)\", gap: 16 } },\n            React.createElement(\"div\", { style: { width: 40, height: 40, borderRadius: \"50%\", border: `3px solid ${C.line}`, borderTopColor: C.amber, animation: \"spin .8s linear infinite\" } }),\n            React.createElement(\"p\", { style: { color: C.mute, fontSize: 13 } }, \"Carregando...\"))) : !authed ? (React.createElement(AuthScreen, { onAuth: (p) => { setAuthed(true); setPapel(p); if (p === \"marca\")\n                setTab(\"marcas\"); } })) : papel === \"marca\" ? (React.createElement(BrandApp, { profile: profile, plano: plano, ofertas: ofertas, setOfertas: setOfertas, marcaProfile: marcaProfile, setMarcaProfile: setMarcaProfile, mensagens: mensagens, addMsg: addMsg, notify: notify, notificacoes: notificacoes, setNotificacoes: setNotificacoes, produtos: produtos, setProdutos: setProdutos, vendas: vendas, onSalvarLoja: salvarLojasSb, onTrocar: () => { window._sb?.auth.signOut(); setAuthed(false); setPapel(null); setMenuOpen(false); }, onSair: () => { window._sb?.auth.signOut(); setAuthed(false); setMenuOpen(false); } })) : !setupOk ? (React.createElement(\"div\", { style: { maxWidth: 640, margin: \"0 auto\", padding: \"30px 18px 60px\",\n                backgroundImage: `radial-gradient(circle at 80% -5%, rgba(168,85,247,.12), transparent 50%)` } },\n            React.createElement(Marca, null),\n            React.createElement(\"h2\", { className: \"disp\", style: { fontSize: 26, margin: \"22px 0 4px\", fontWeight: 700 } }, \"Bora montar seu perfil\"),\n            React.createElement(Sub, null, \"\\u00C9 com isso que o app entrega tudo mastigado pra voc\\u00EA.\"),\n            React.createElement(ProfileForm, { value: profile, onSave: (d) => { setProfile(d); salvarPerfilSb(d); setTab(\"dashboard\"); }, modo: \"setup\" }))) : (React.createElement(\"div\", { style: { maxWidth: 640, margin: \"0 auto\", padding: \"26px 18px 96px\",\n                backgroundImage: `radial-gradient(circle at 80% -5%, rgba(168,85,247,.12), transparent 50%)` } },\n            React.createElement(\"div\", { style: { display: \"flex\", alignItems: \"center\", gap: 10, justifyContent: \"space-between\" } },\n                React.createElement(\"div\", { style: { display: \"flex\", alignItems: \"center\", gap: 10 } },\n                    React.createElement(\"button\", { onClick: () => setMenuOpen(true), style: { background: \"none\", border: \"none\", color: C.ink, fontSize: 24, cursor: \"pointer\", padding: \"4px 6px 4px 0\", lineHeight: 1 } }, \"\\u2630\"),\n                    React.createElement(Marca, null)),\n                React.createElement(NotifBell, { items: notificacoes, para: \"criador\", open: notifOpen, setOpen: setNotifOpen, onRead: () => setNotificacoes((ns) => ns.map((x) => x.para === \"criador\" ? { ...x, lida: true } : x)) })),\n            menuOpen && (React.createElement(React.Fragment, null,\n                React.createElement(\"div\", { onClick: () => setMenuOpen(false), style: { position: \"fixed\", inset: 0, background: \"rgba(0,0,0,.55)\", zIndex: 30 } }),\n                React.createElement(\"div\", { className: \"rise\", style: { position: \"fixed\", top: 0, left: 0, bottom: 0, width: 260, maxWidth: \"80%\", zIndex: 31, background: \"var(--bg)\", borderRight: `1px solid ${C.line}`, padding: \"22px 0\", overflowY: \"auto\", boxShadow: \"8px 0 30px rgba(0,0,0,.5)\" } },\n                    React.createElement(\"div\", { style: { padding: \"0 18px 14px\", display: \"flex\", justifyContent: \"space-between\", alignItems: \"center\" } },\n                        React.createElement(Marca, null),\n                        React.createElement(\"button\", { onClick: () => setMenuOpen(false), style: { background: \"none\", border: \"none\", color: C.mute, fontSize: 22, cursor: \"pointer\", lineHeight: 1 } }, \"\\u00D7\")),\n                    React.createElement(\"div\", { onClick: () => { setTab(\"perfil\"); setMenuOpen(false); }, style: { display: \"flex\", alignItems: \"center\", gap: 10, padding: \"0 18px 14px\", margin: \"0 0 6px\", cursor: \"pointer\", borderBottom: `1px solid ${C.line}` } },\n                        profile.foto ? React.createElement(\"img\", { src: profile.foto, alt: \"\", style: { width: 42, height: 42, borderRadius: \"50%\", objectFit: \"cover\" } })\n                            : React.createElement(\"div\", { style: { width: 42, height: 42, borderRadius: \"50%\", background: `linear-gradient(135deg, ${C.amber}, ${C.rose})`, display: \"flex\", alignItems: \"center\", justifyContent: \"center\", color: \"#fff\", fontWeight: 700, fontFamily: \"'Space Grotesk', sans-serif\", fontSize: 18 } }, (meuNome || \"C\").charAt(0).toUpperCase()),\n                        React.createElement(\"div\", { style: { minWidth: 0 } },\n                            React.createElement(\"div\", { className: \"disp\", style: { fontSize: 14.5, fontWeight: 700, whiteSpace: \"nowrap\", overflow: \"hidden\", textOverflow: \"ellipsis\" } }, meuNome),\n                            React.createElement(\"div\", { style: { fontSize: 11.5, color: C.amber } }, \"Ver perfil\"))),\n                    [[\"dashboard\", \"Dashboard\"], [\"plano\", \"Plano\"], [\"chat\", \"Chat\"], [\"marcas\", \"Marcas\"], [\"colabs\", \"Colabs\"], [\"produtos\", \"Produtos\"], [\"carteira\", \"Carteira\"], [\"arquivados\", \"Arquivados\"], [\"perfil\", \"Perfil\"], [\"config\", \"Configura\u00e7\u00f5es\"]].map(([id, lb]) => (React.createElement(\"button\", { key: id, onClick: () => { setTab(id); setMenuOpen(false); }, style: {\n                            display: \"flex\", alignItems: \"center\", gap: 13, width: \"100%\", textAlign: \"left\", padding: \"13px 18px\", background: tab === id ? \"rgba(168,85,247,.12)\" : \"transparent\",\n                            border: \"none\", borderLeft: `3px solid ${tab === id ? C.amber : \"transparent\"}`, color: tab === id ? C.amber : C.ink, fontFamily: \"'DM Sans', sans-serif\", fontSize: 15, fontWeight: 600, cursor: \"pointer\"\n                        } },\n                        React.createElement(Icon, { name: id, size: 19, color: tab === id ? \"var(--accent)\" : \"var(--mute)\" }),\n                        lb))),\n                    React.createElement(\"button\", { onClick: () => { window._sb?.auth.signOut(); setAuthed(false); setPapel(null); setMenuOpen(false); }, style: {\n                            display: \"flex\", alignItems: \"center\", gap: 13, width: \"100%\", textAlign: \"left\", padding: \"13px 18px\", marginTop: 8, borderTop: `1px solid ${C.line}`, background: \"transparent\", border: \"none\", color: C.ink, fontFamily: \"'DM Sans', sans-serif\", fontSize: 15, fontWeight: 600, cursor: \"pointer\"\n                        } },\n                        React.createElement(Icon, { name: \"swap\", size: 19, color: \"var(--mute)\" }),\n                        \"Trocar de conta\"),\n                    React.createElement(\"button\", { onClick: () => { window._sb?.auth.signOut(); setAuthed(false); setMenuOpen(false); }, style: {\n                            display: \"flex\", alignItems: \"center\", gap: 13, width: \"100%\", textAlign: \"left\", padding: \"13px 18px\", background: \"transparent\", border: \"none\", color: C.rose, fontFamily: \"'DM Sans', sans-serif\", fontSize: 15, fontWeight: 600, cursor: \"pointer\"\n                        } },\n                        React.createElement(Icon, { name: \"sair\", size: 19, color: \"var(--rose)\" }),\n                        \"Sair\")))),\n            tab === \"dashboard\" && (React.createElement(DashboardScreen, { profile: profile, plano: plano, usosSemana: usosSemana, limiteSemana: limiteSemana, ganhoMarcas: ganhoLiberado, ganhoProdutos: ganhoProdutos, ganhoIndicacao: ganhoIndicacao, totalGanho: totalGanho, sacado: sacado, ganhoPendente: ganhoPendente, ofertas: ofertas, vendas: vendas, colabs: colabs, arquivados: arquivados, produtos: produtos, onIr: (t) => setTab(t) })),\n            tab === \"plano\" && (React.createElement(\"div\", { className: \"rise\" },\n                React.createElement(\"h2\", { className: \"disp\", style: { fontSize: 24, margin: \"16px 0 2px\", fontWeight: 700 } }, \"Sua semana\"),\n                React.createElement(Sub, null, \"Toque num dia \\u2014 o app gera a pauta completa dele na hora.\"),\n                React.createElement(\"div\", { style: { borderRadius: 16, padding: 16, marginBottom: 16, border: `1px solid ${C.line}`, background: `linear-gradient(135deg, rgba(168,85,247,.1), rgba(255,107,107,.06))` } },\n                    React.createElement(\"div\", { style: { display: \"flex\", justifyContent: \"space-between\", alignItems: \"center\" } },\n                        React.createElement(\"span\", { className: \"disp\", style: { fontSize: 17, fontWeight: 700 } },\n                            \"\\u26A1 N\\u00EDvel \",\n                            nivel),\n                        React.createElement(\"span\", { style: { fontSize: 12.5, color: C.amber, fontWeight: 600 } },\n                            \"\\uD83D\\uDCB0 \",\n                            ganhoLiberado.toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" }))),\n                    React.createElement(\"div\", { style: { height: 8, borderRadius: 8, background: C.line, marginTop: 10, overflow: \"hidden\" } },\n                        React.createElement(\"div\", { style: { height: \"100%\", width: `${xpNoNivel}%`, background: `linear-gradient(90deg, ${C.amber}, ${C.rose})`, transition: \"width .4s\" } })),\n                    React.createElement(\"div\", { style: { display: \"flex\", justifyContent: \"space-between\", marginTop: 8, fontSize: 11.5, color: C.mute } },\n                        React.createElement(\"span\", null,\n                            pautasGeradas,\n                            \" pautas \\u00B7 \",\n                            bombouCount,\n                            \" bombaram\"),\n                        React.createElement(\"span\", null,\n                            xpNoNivel,\n                            \"/100 XP\")),\n                    React.createElement(\"p\", { style: { fontSize: 11, color: C.mute, margin: \"10px 0 0\", opacity: .75 } }, ganhoPendente > 0 ? `${ganhoPendente.toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" })} a receber (entregas em andamento).` : \"Feche campanhas com marcas pra come\u00e7ar a faturar.\")),\n                React.createElement(\"div\", { style: { display: \"flex\", justifyContent: \"space-between\", alignItems: \"center\", padding: \"11px 14px\", borderRadius: 12, marginBottom: 14, background: C.card, border: `1px solid ${C.line}` } },\n                    React.createElement(\"span\", { style: { fontSize: 13, color: C.ink } },\n                        \"Pautas desta semana \",\n                        React.createElement(\"span\", { style: { color: C.mute } },\n                            \"\\u00B7 plano \",\n                            plano)),\n                    React.createElement(\"span\", { style: { fontSize: 13.5, fontWeight: 700, color: usosSemana >= limiteSemana ? C.rose : C.green } },\n                        usosSemana,\n                        \"/\",\n                        limiteSemana === Infinity ? \"\u221e\" : limiteSemana)),\n                formatosTop.length > 0 && (React.createElement(\"div\", { style: { padding: \"10px 14px\", borderRadius: 12, marginBottom: 14, background: \"rgba(168,85,247,.08)\", border: `1px solid ${C.line}` } },\n                    React.createElement(\"span\", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: \"uppercase\" } }, \"\\uD83D\\uDCCA T\\u00E1 funcionando pra voc\\u00EA\"),\n                    React.createElement(\"p\", { style: { margin: \"5px 0 0\", fontSize: 13.5, lineHeight: 1.4 } },\n                        formatosTop.join(\", \"),\n                        \" \\u2014 o app vai priorizar isso nas pr\\u00F3ximas pautas.\"))),\n                React.createElement(\"div\", { className: \"noscroll\", style: { display: \"flex\", gap: 8, overflowX: \"auto\", paddingBottom: 6, margin: \"4px -2px 16px\" } }, DIAS.map((d, i) => {\n                    const on = selectedDay === i;\n                    const pronto = !!dias[d]?.data;\n                    const passou = i < hoje;\n                    return (React.createElement(\"button\", { key: d, onClick: () => selecionarDia(i), style: {\n                            flex: \"0 0 auto\", padding: \"8px 12px\", borderRadius: 12, cursor: \"pointer\", position: \"relative\", textAlign: \"center\", minWidth: 50,\n                            border: `1px solid ${on ? C.amber : C.line}`, fontFamily: \"'DM Sans', sans-serif\", fontWeight: 700, fontSize: 13,\n                            background: on ? `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})` : \"transparent\",\n                            color: on ? \"var(--onAccent)\" : C.ink, opacity: passou && !on ? .4 : 1,\n                        } },\n                        React.createElement(\"div\", null, ABREV[i]),\n                        React.createElement(\"div\", { style: { fontSize: 11, fontWeight: 600, opacity: .8 } }, datasSemana[i].getDate()),\n                        i === hoje && React.createElement(\"span\", { style: { position: \"absolute\", top: -6, right: -3, fontSize: 8, background: C.rose, color: \"#fff\", padding: \"1px 4px\", borderRadius: 6 } }, \"hoje\"),\n                        pronto && i !== hoje && React.createElement(\"span\", { style: { position: \"absolute\", top: 5, right: 6, width: 5, height: 5, borderRadius: 5, background: on ? \"var(--onAccent)\" : C.amber } })));\n                })),\n                React.createElement(DiaConteudo, { dia: DIAS[selectedDay], estado: dias[DIAS[selectedDay]], onGerar: () => gerarDia(selectedDay), onUpgrade: () => { setTab(\"config\"); }, desempenho: desempenho, onRate: (idx, r) => setDesempenho((o) => {\n                        const key = `${DIAS[selectedDay]}|${idx}`;\n                        return { ...o, [key]: o[key] === r ? null : r };\n                    }) }))),\n            tab === \"chat\" && (React.createElement(ChatScreen, { chat: chat, setChat: setChat, perfilTexto: perfilTexto, ajustes: ajustes, addAjuste: (a) => setAjustes((p) => (p.includes(a) ? p : [...p, a])), removeAjuste: (a) => setAjustes((p) => p.filter((x) => x !== a)), onNovoNicho: (n) => { setProfile((p) => ({ ...p, nicho: n })); setDias({}); setDesempenho({}); } })),\n            tab === \"perfil\" && (React.createElement(\"div\", { className: \"rise\" },\n                React.createElement(\"h2\", { className: \"disp\", style: { fontSize: 24, margin: \"16px 0 2px\", fontWeight: 700 } }, \"Seu perfil\"),\n                React.createElement(Sub, null, \"Mudou de estrat\\u00E9gia? Edite aqui \\u2014 isso atualiza as pr\\u00F3ximas pautas.\"),\n                React.createElement(ProfileForm, { value: profile, onSave: (d) => { setProfile(d); salvarPerfilSb(d); setDias({}); }, modo: \"editar\" }))),\n            tab === \"marcas\" && (planoNivel >= 1 ? React.createElement(MarcasScreen, { profile: profile, plano: plano, ofertas: ofertas, setOfertas: setOfertas, mensagens: mensagens, addMsg: addMsg, notify: notify }) : React.createElement(BloqueioPlano, { titulo: \"\\uD83D\\uDD12 Apenas para assinantes\", sub: \"As parcerias com marcas s\\u00E3o exclusivas dos planos pagos. Assine pra se candidatar \\u00E0s campanhas e faturar.\", onIr: () => setTab(\"config\") })),\n            tab === \"carteira\" && React.createElement(CarteiraScreen, { disponivel: totalGanho - sacado, pendente: ganhoPendente, total: totalGanho, sacado: sacado, ganhoMarcas: ganhoLiberado, ganhoProdutos: ganhoProdutos, ganhoIndicacao: ganhoIndicacao, emAnalise: totalEmAnalise, holdDias: HOLD_DIAS, onSacar: (v) => setSacado((s) => s + v) }),\n            tab === \"produtos\" && React.createElement(AfiliadosScreen, { profile: profile, produtos: produtos, setProdutos: setProdutos, vendas: vendas, setVendas: setVendas }),\n            tab === \"colabs\" && (planoNivel >= 1 ? React.createElement(ColabsScreen, { profile: profile, colabs: colabs, setColabs: setColabs }) : React.createElement(BloqueioPlano, { titulo: \"Colabs\", sub: \"Dispon\\u00EDvel a partir do plano Criador. Fa\\u00E7a upgrade pra colaborar com outros criadores.\", onIr: () => setTab(\"config\") })),\n            tab === \"arquivados\" && React.createElement(ArquivadosScreen, { itens: arquivados }),\n            tab === \"config\" && React.createElement(ConfigScreen, { profile: profile, plano: plano, setPlano: setPlanoComSync, usosSemana: usosSemana, limiteSemana: limiteSemana, indicados: indicados, setIndicados: setIndicados })))));\n}\n// ---------- conte\u00fado do dia ----------\nfunction DiaConteudo({ dia, estado, onGerar, desempenho, onRate, onUpgrade }) {\n    const [verEx, setVerEx] = useState({});\n    if (!estado) {\n        return (React.createElement(\"div\", { style: { textAlign: \"center\", padding: \"40px 10px\" } },\n            React.createElement(\"p\", { style: { color: C.mute, fontSize: 14 } },\n                \"Nenhuma pauta gerada pra \",\n                dia,\n                \" ainda.\"),\n            React.createElement(Botao, { onClick: onGerar, style: { maxWidth: 240, margin: \"16px auto 0\" } },\n                \"\\u26A1 Gerar pauta de \",\n                dia)));\n    }\n    if (estado.loading) {\n        return (React.createElement(\"div\", { style: { display: \"flex\", flexDirection: \"column\", alignItems: \"center\", gap: 14, padding: \"50px 0\" } },\n            React.createElement(\"div\", { style: { width: 34, height: 34, border: `3px solid ${C.line}`, borderTopColor: C.amber, borderRadius: \"50%\", animation: \"spin .9s linear infinite\" } }),\n            React.createElement(\"p\", { style: { color: C.amber, animation: \"glow 2s ease infinite\" } },\n                \"Montando a pauta de \",\n                dia,\n                \"...\")));\n    }\n    if (estado.erro === \"RATE_LIMIT\") {\n        return (React.createElement(\"div\", { style: { padding: 18, borderRadius: 14, background: \"rgba(255,180,0,.08)\", border: \"1px solid rgba(255,180,0,.35)\", textAlign: \"center\" } },\n            React.createElement(\"div\", { style: { fontSize: 30 } }, \"\\u23F3\"),\n            React.createElement(\"strong\", { className: \"disp\", style: { display: \"block\", fontSize: 16, marginTop: 6 } }, \"Muitas gera\\u00E7\\u00F5es simult\\u00E2neas\"),\n            React.createElement(\"p\", { style: { fontSize: 13, color: C.mute, margin: \"8px 0 14px\", lineHeight: 1.5 } }, \"O servi\\u00E7o de IA atingiu o limite de requisi\\u00E7\\u00F5es por hora. Aguarde alguns minutos e tente de novo \\u2014 seus outros dias n\\u00E3o s\\u00E3o afetados.\"),\n            React.createElement(Botao, { onClick: onGerar, style: { maxWidth: 220, marginLeft: \"auto\", marginRight: \"auto\" } }, \"Tentar de novo\")));\n    }\n    if (estado.erro === \"LIMITE\") {\n        return (React.createElement(\"div\", { style: { padding: 18, borderRadius: 14, background: \"rgba(168,85,247,.1)\", border: \"1px solid rgba(168,85,247,.4)\", textAlign: \"center\" } },\n            React.createElement(\"div\", { style: { fontSize: 30 } }, \"\\uD83D\\uDD12\"),\n            React.createElement(\"strong\", { className: \"disp\", style: { display: \"block\", fontSize: 17, marginTop: 6 } }, \"Voc\\u00EA usou todas as pautas da semana\"),\n            React.createElement(\"p\", { style: { fontSize: 13, color: C.mute, margin: \"8px 0 0\", lineHeight: 1.5 } }, \"Seu limite zera no pr\\u00F3ximo domingo. Pra gerar mais agora, fa\\u00E7a upgrade do plano.\"),\n            onUpgrade && React.createElement(Botao, { onClick: onUpgrade, style: { marginTop: 14, maxWidth: 220, marginLeft: \"auto\", marginRight: \"auto\" } }, \"Ver planos\")));\n    }\n    if (estado.erro) {\n        return (React.createElement(\"div\", { style: { padding: 14, borderRadius: 12, background: \"#2a1414\", border: \"1px solid #4a2020\" } },\n            React.createElement(\"strong\", { style: { color: C.rose } }, \"Opa.\"),\n            React.createElement(\"p\", { style: { fontSize: 12.5, color: \"#ffb3b3\", margin: \"8px 0 0\", wordBreak: \"break-word\" } }, estado.erro),\n            React.createElement(Botao, { onClick: onGerar, style: { marginTop: 14 } }, \"Tentar de novo\")));\n    }\n    const { foco_do_dia, posts } = estado.data;\n    return (React.createElement(\"div\", { className: \"rise\" },\n        foco_do_dia && (React.createElement(\"div\", { style: { padding: \"12px 15px\", borderRadius: 12, marginBottom: 16, background: \"rgba(168,85,247,.08)\", borderLeft: `3px solid ${C.amber}` } },\n            React.createElement(\"span\", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: \"uppercase\" } },\n                \"Foco de \",\n                dia),\n            React.createElement(\"p\", { style: { margin: \"5px 0 0\", fontSize: 14, lineHeight: 1.5 } }, foco_do_dia))),\n        posts.map((post, i) => (React.createElement(\"div\", { key: i, className: \"rise\", style: { animationDelay: `${i * 0.07}s`, marginBottom: 14, borderRadius: 16, border: `1px solid ${C.line}`, background: C.card, overflow: \"hidden\" } },\n            React.createElement(\"div\", { style: { padding: \"14px 16px 0\", display: \"flex\", justifyContent: \"space-between\", alignItems: \"center\", gap: 8 } },\n                React.createElement(\"span\", { style: { fontSize: 11, padding: \"3px 10px\", borderRadius: 20, background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: \"var(--onAccent)\", fontWeight: 700 } }, post.formato),\n                post.melhor_horario && React.createElement(\"span\", { style: { fontSize: 12, color: C.mute } },\n                    \"\\uD83D\\uDD50 \",\n                    post.melhor_horario)),\n            React.createElement(\"div\", { style: { padding: \"8px 16px 16px\" } },\n                React.createElement(\"h3\", { className: \"disp\", style: { fontSize: 19, margin: \"4px 0 0\", lineHeight: 1.15, fontWeight: 700 } }, post.tema),\n                React.createElement(Bloco, { rotulo: \"\\uD83E\\uDE9D Gancho\", texto: post.gancho, cor: C.amber }),\n                post.roteiro?.length > 0 && (React.createElement(\"div\", { style: { marginTop: 11 } },\n                    React.createElement(Rot, null, \"\\uD83C\\uDFAC Roteiro\"),\n                    React.createElement(\"ol\", { style: { margin: \"6px 0 0\", padding: 0, listStyle: \"none\" } }, post.roteiro.map((b, k) => (React.createElement(\"li\", { key: k, style: { display: \"flex\", gap: 9, marginBottom: 6, fontSize: 13.5, lineHeight: 1.45 } },\n                        React.createElement(\"span\", { style: { flex: \"0 0 auto\", width: 20, height: 20, borderRadius: 6, background: C.line, color: C.amber, fontSize: 11, display: \"flex\", alignItems: \"center\", justifyContent: \"center\", fontWeight: 700 } }, k + 1),\n                        React.createElement(\"span\", null, b))))))),\n                post.storyboard?.length > 0 && (React.createElement(\"div\", { style: { marginTop: 12 } },\n                    React.createElement(Rot, null, \"\\uD83D\\uDCF1 Storyboard (o que filmar)\"),\n                    React.createElement(\"div\", { className: \"noscroll\", style: { display: \"flex\", gap: 8, overflowX: \"auto\", marginTop: 8, paddingBottom: 4 } }, post.storyboard.map((q, k) => (React.createElement(\"div\", { key: k, style: { flex: \"0 0 auto\", width: 124, borderRadius: 12, border: `1px solid ${C.line}`, background: C.soft, overflow: \"hidden\" } },\n                        React.createElement(\"div\", { style: { height: 86, display: \"flex\", flexDirection: \"column\", alignItems: \"center\", justifyContent: \"center\", padding: 8, textAlign: \"center\", background: \"linear-gradient(160deg, rgba(168,85,247,.12), rgba(255,107,107,.06))\", position: \"relative\" } },\n                            React.createElement(\"span\", { style: { position: \"absolute\", top: 5, left: 6, fontSize: 9, color: C.amber, fontWeight: 700 } }, k + 1),\n                            React.createElement(\"span\", { style: { fontSize: 18 } }, iconeCena(q.tipo)),\n                            q.texto_tela && React.createElement(\"span\", { style: { fontSize: 9.5, color: C.ink, fontWeight: 700, marginTop: 4, lineHeight: 1.2 } },\n                                \"\\\"\",\n                                q.texto_tela,\n                                \"\\\"\")),\n                        React.createElement(\"div\", { style: { padding: \"7px 8px\" } },\n                            React.createElement(\"span\", { style: { fontSize: 9, color: C.amber, textTransform: \"uppercase\", letterSpacing: .5, fontWeight: 700 } }, q.tipo),\n                            React.createElement(\"p\", { style: { fontSize: 11, color: C.ink, margin: \"3px 0 0\", lineHeight: 1.3 } }, q.cena)))))))),\n                post.cta && (React.createElement(\"div\", { style: { marginTop: 11, padding: \"8px 12px\", borderRadius: 9, background: \"rgba(255,107,107,.1)\", borderLeft: `3px solid ${C.rose}`, fontSize: 13 } },\n                    React.createElement(\"strong\", { style: { color: C.rose } }, \"CTA:\"),\n                    \" \",\n                    post.cta)),\n                post.hashtags?.length > 0 && (React.createElement(\"div\", { style: { marginTop: 10, display: \"flex\", flexWrap: \"wrap\", gap: 6 } }, post.hashtags.map((h, k) => React.createElement(\"span\", { key: k, style: { fontSize: 11.5, color: C.amber, background: \"rgba(168,85,247,.1)\", padding: \"2px 8px\", borderRadius: 6 } }, h)))),\n                React.createElement(\"div\", { style: { marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: \"flex\", alignItems: \"center\", gap: 7, flexWrap: \"wrap\" } },\n                    React.createElement(\"span\", { style: { fontSize: 11.5, color: C.mute } }, \"J\\u00E1 postou? Como foi?\"),\n                    [[\"bombou\", \"\ud83d\udd25 Bombou\"], [\"medio\", \"\ud83d\udc4d M\u00e9dio\"], [\"fraco\", \"\ud83d\udc4e Fraco\"]].map(([v, lb]) => {\n                        const sel = desempenho[`${dia}|${i}`] === v;\n                        return (React.createElement(\"button\", { key: v, onClick: () => onRate(i, v), style: {\n                                padding: \"5px 10px\", borderRadius: 8, cursor: \"pointer\", fontSize: 12, fontWeight: 600, fontFamily: \"'DM Sans', sans-serif\",\n                                border: `1px solid ${sel ? C.amber : C.line}`, background: sel ? \"rgba(168,85,247,.15)\" : \"transparent\", color: sel ? C.amber : C.mute,\n                            } }, lb));\n                    })),\n                React.createElement(\"button\", { onClick: () => setVerEx((o) => ({ ...o, [i]: !o[i] })), style: {\n                        width: \"100%\", marginTop: 10, padding: \"9px\", borderRadius: 9, cursor: \"pointer\", background: \"transparent\",\n                        border: `1px dashed ${C.line}`, color: C.amber, fontFamily: \"'DM Sans', sans-serif\", fontSize: 12.5, fontWeight: 600\n                    } }, verEx[i] ? \"Ocultar exemplo visual\" : \"\ud83d\udcf1 Ver exemplo visual\"),\n                verEx[i] && (React.createElement(\"div\", { className: \"noscroll\", style: { display: \"flex\", gap: 8, overflowX: \"auto\", marginTop: 10, paddingBottom: 4 } }, [{ tag: \"Abertura\", txt: post.gancho }, ...(post.roteiro || []).map((b, k) => ({ tag: `Cena ${k + 1}`, txt: b })), { tag: \"Final / CTA\", txt: post.cta }]\n                    .filter((f) => f.txt).map((f, k) => (React.createElement(\"div\", { key: k, style: { flex: \"0 0 auto\", width: 112, height: 200, borderRadius: 12, padding: 10, display: \"flex\", flexDirection: \"column\", justifyContent: \"space-between\",\n                        background: `linear-gradient(160deg, rgba(168,85,247,${0.22 - k * 0.02}), rgba(255,107,107,.12)), ${C.soft}`, border: `1px solid ${C.line}` } },\n                    React.createElement(\"span\", { style: { fontSize: 9.5, fontWeight: 700, color: \"var(--onAccent)\", background: C.amber, alignSelf: \"flex-start\", padding: \"2px 7px\", borderRadius: 6 } }, f.tag),\n                    React.createElement(\"span\", { style: { fontSize: 11, lineHeight: 1.35, color: C.ink, fontWeight: 600 } }, f.txt),\n                    React.createElement(\"span\", { style: { fontSize: 8.5, color: C.mute, textAlign: \"right\" } }, post.formato)))))))))),\n        React.createElement(\"button\", { onClick: onGerar, style: { width: \"100%\", padding: \"12px\", borderRadius: 12, cursor: \"pointer\", background: \"transparent\",\n                border: `1px solid ${C.line}`, color: C.mute, fontFamily: \"'DM Sans', sans-serif\", fontSize: 14, fontWeight: 600, marginTop: 4 } },\n            \"\\uD83D\\uDD04 \",\n            (estado.refeitos || 0) < 1 ? \"N\u00e3o curtiu? Refazer essa pauta (gr\u00e1tis)\" : \"Refazer de novo (usa 1 pauta da semana)\"),\n        React.createElement(\"p\", { style: { fontSize: 11, color: C.mute, textAlign: \"center\", marginTop: 14, opacity: .7 } }, \"Tend\\u00EAncias estimadas pela IA. Feed ao vivo entra na vers\\u00E3o com backend.\")));\n}\n// ---------- chat / \u00e1rea de ajustes ----------\nfunction ChatScreen({ chat, setChat, perfilTexto, ajustes, addAjuste, removeAjuste, onNovoNicho }) {\n    const [input, setInput] = useState(\"\");\n    const [loading, setLoading] = useState(false);\n    async function enviar() {\n        const msg = input.trim();\n        if (!msg || loading)\n            return;\n        const novo = [...chat, { role: \"user\", text: msg }];\n        setChat(novo);\n        setInput(\"\");\n        setLoading(true);\n        try {\n            const txt = await chamarIA({\n                system: `Voc\u00ea \u00e9 o assistente do Cria. Perfil atual do criador:\n${perfilTexto()}\nAjustes j\u00e1 ativos: ${ajustes.length ? ajustes.join(\"; \") : \"nenhum\"}.\n\nO criador pode pedir pra voc\u00ea dar mais \u00eanfase em algo, mudar o foco do conte\u00fado, ou avisar que trocou de nicho. Quando ele pedir um ajuste, transforme em uma instru\u00e7\u00e3o curta e imperativa pra valer nas pr\u00f3ximas pautas.\n\nResponda SEMPRE apenas com JSON v\u00e1lido, sem markdown:\n{\n  \"resposta\": \"resposta curta e pr\u00e1tica (m\u00e1x 3 frases), confirmando o que ser\u00e1 ajustado\",\n  \"ajuste\": \"instru\u00e7\u00e3o curta e imperativa pra guardar, OU null se n\u00e3o for um pedido de ajuste\",\n  \"novo_nicho\": \"o novo nicho SE ele disse que mudou de nicho, sen\u00e3o null\"\n}`,\n                messages: novo.map((m) => ({ role: m.role, content: m.text })),\n            });\n            // parse tolerante: se falhar, mostra o texto cru como resposta\n            let resposta = txt.trim(), ajuste = null, novoNicho = null;\n            try {\n                const obj = JSON.parse(txt.slice(txt.indexOf(\"{\"), txt.lastIndexOf(\"}\") + 1));\n                resposta = obj.resposta || resposta;\n                ajuste = obj.ajuste && obj.ajuste !== \"null\" ? obj.ajuste : null;\n                novoNicho = obj.novo_nicho && obj.novo_nicho !== \"null\" ? obj.novo_nicho : null;\n            }\n            catch (_) { }\n            const extras = [];\n            if (ajuste) {\n                addAjuste(ajuste);\n                extras.push({ role: \"sys\", text: `\u2713 Ajuste salvo: ${ajuste}` });\n            }\n            if (novoNicho) {\n                onNovoNicho(novoNicho);\n                extras.push({ role: \"sys\", text: `\ud83d\udd04 Nicho atualizado para \"${novoNicho}\". As pautas foram resetadas.` });\n            }\n            setChat([...novo, { role: \"assistant\", text: resposta }, ...extras]);\n        }\n        catch (e) {\n            setChat([...novo, { role: \"assistant\", text: \"Deu um erro aqui: \" + String(e.message || e) }]);\n        }\n        finally {\n            setLoading(false);\n        }\n    }\n    return (React.createElement(\"div\", { className: \"rise\" },\n        React.createElement(\"h2\", { className: \"disp\", style: { fontSize: 24, margin: \"16px 0 2px\", fontWeight: 700 } }, \"Assistente\"),\n        React.createElement(Sub, null, \"Pe\\u00E7a melhorias (\\\"d\\u00E1 mais \\u00EAnfase em dribles\\\") ou avise se mudou de nicho \\u2014 o app aplica nas pr\\u00F3ximas pautas.\"),\n        ajustes.length > 0 && (React.createElement(\"div\", { style: { marginBottom: 14, padding: \"10px 12px\", borderRadius: 12, border: `1px solid ${C.line}`, background: \"rgba(168,85,247,.06)\" } },\n            React.createElement(\"span\", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: \"uppercase\" } }, \"\\u2699\\uFE0F Ajustes ativos\"),\n            React.createElement(\"div\", { style: { display: \"flex\", flexWrap: \"wrap\", gap: 6, marginTop: 8 } }, ajustes.map((a) => (React.createElement(\"span\", { key: a, style: { display: \"flex\", alignItems: \"center\", gap: 6, fontSize: 12.5, background: C.card, border: `1px solid ${C.line}`, padding: \"4px 6px 4px 10px\", borderRadius: 8 } },\n                a,\n                React.createElement(\"button\", { onClick: () => removeAjuste(a), style: { background: \"none\", border: \"none\", color: C.mute, cursor: \"pointer\", fontSize: 14, lineHeight: 1 } }, \"\\u00D7\"))))))),\n        React.createElement(\"div\", { style: { minHeight: 180, display: \"flex\", flexDirection: \"column\", gap: 10, marginBottom: 14 } },\n            chat.length === 0 && React.createElement(\"p\", { style: { color: C.mute, fontSize: 13.5, textAlign: \"center\", padding: \"26px 0\" } }, \"Ex: \\\"foca mais em v\\u00EDdeos curtos e d\\u00E1 \\u00EAnfase em humor\\\"\"),\n            chat.map((m, i) => {\n                if (m.role === \"sys\")\n                    return (React.createElement(\"div\", { key: i, style: { alignSelf: \"center\", fontSize: 12, color: C.amber, background: \"rgba(168,85,247,.1)\", padding: \"6px 12px\", borderRadius: 10, textAlign: \"center\" } }, m.text));\n                return (React.createElement(\"div\", { key: i, style: { alignSelf: m.role === \"user\" ? \"flex-end\" : \"flex-start\", maxWidth: \"85%\",\n                        padding: \"10px 13px\", borderRadius: 14, fontSize: 14, lineHeight: 1.5,\n                        background: m.role === \"user\" ? `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})` : C.card,\n                        color: m.role === \"user\" ? \"var(--onAccent)\" : C.ink, border: m.role === \"user\" ? \"none\" : `1px solid ${C.line}` } }, m.text));\n            }),\n            loading && React.createElement(\"div\", { style: { alignSelf: \"flex-start\", color: C.mute, fontSize: 13, padding: \"6px 4px\" } }, \"digitando...\")),\n        React.createElement(\"div\", { style: { display: \"flex\", gap: 8 } },\n            React.createElement(\"input\", { value: input, onChange: (e) => setInput(e.target.value), onKeyDown: (e) => e.key === \"Enter\" && enviar(), placeholder: \"Pe\\u00E7a uma melhoria...\", style: { flex: 1, padding: \"13px 14px\", borderRadius: 12, border: `1px solid ${C.line}`, background: C.soft, color: C.ink, fontSize: 14.5, fontFamily: \"'DM Sans', sans-serif\", outline: \"none\" } }),\n            React.createElement(\"button\", { onClick: enviar, disabled: loading, style: { padding: \"0 18px\", borderRadius: 12, border: \"none\", cursor: \"pointer\", fontSize: 18,\n                    background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: \"var(--onAccent)\" } }, \"\\u2191\"))));\n}\n// ---------- configura\u00e7\u00f5es ----------\nconst MP_LINKS = { \"Criador\": \"https://mpago.la/2ke2UT6\", \"Pro\": \"https://mpago.la/1zzuT3q\" };\nfunction PagamentoModal({ plano: pl, onFechar, onConfirmar }) {\n    const link = MP_LINKS[pl.id];\n    const valor = pl.id === \"Pro\" ? \"R$ 99,90\" : \"R$ 59,90\";\n    return (React.createElement(\"div\", { style: { position: \"fixed\", inset: 0, background: \"rgba(0,0,0,.88)\", zIndex: 9999, display: \"flex\", alignItems: \"flex-end\", justifyContent: \"center\" } },\n        React.createElement(\"div\", { style: { width: \"100%\", maxWidth: 480, background: \"#0d0d14\", borderRadius: \"20px 20px 0 0\", padding: \"24px 22px 40px\", border: \"1px solid #2a2a40\" } },\n            React.createElement(\"div\", { style: { display: \"flex\", justifyContent: \"space-between\", alignItems: \"center\", marginBottom: 18 } },\n                React.createElement(\"span\", { style: { fontSize: 19, fontWeight: 800, color: \"#f0eeff\", fontFamily: \"'Space Grotesk',sans-serif\" } },\n                    \"Assinar plano \",\n                    pl.id),\n                React.createElement(\"button\", { onClick: onFechar, style: { background: \"none\", border: \"none\", color: \"#6b6a80\", fontSize: 26, cursor: \"pointer\", lineHeight: 1, padding: \"0 4px\" } }, \"\\u00D7\")),\n            React.createElement(\"div\", { style: { padding: 16, borderRadius: 14, background: \"#1a1a2e\", border: \"1px solid #2a2a40\", marginBottom: 18, textAlign: \"center\" } },\n                React.createElement(\"div\", { style: { fontSize: 13, color: \"#6b6a80\", marginBottom: 6 } }, \"Valor mensal\"),\n                React.createElement(\"div\", { style: { fontSize: 38, fontWeight: 800, color: \"#a855f7\", fontFamily: \"'Space Grotesk',sans-serif\" } }, valor),\n                React.createElement(\"div\", { style: { fontSize: 12, color: \"#6b6a80\", marginTop: 6 } }, pl.linha)),\n            React.createElement(\"p\", { style: { fontSize: 13.5, color: \"#6b6a80\", lineHeight: 1.6, margin: \"0 0 18px\", textAlign: \"center\" } },\n                \"Pague pelo Mercado Pago \\u2014 PIX, cart\\u00E3o ou boleto.\",\n                React.createElement(\"br\", null),\n                \"Plano ativado em at\\u00E9 1 hora ap\\u00F3s a confirma\\u00E7\\u00E3o.\"),\n            React.createElement(\"a\", { href: link, target: \"_blank\", rel: \"noreferrer\", style: { display: \"block\", width: \"100%\", padding: \"16px\", borderRadius: 12, textAlign: \"center\", background: \"linear-gradient(135deg, #009ee3, #00b1ea)\", color: \"#fff\", fontFamily: \"'DM Sans',sans-serif\", fontWeight: 700, fontSize: 16, textDecoration: \"none\", boxSizing: \"border-box\", marginBottom: 12 } }, \"\\uD83D\\uDCB3 Pagar pelo Mercado Pago\"),\n            React.createElement(\"button\", { onClick: () => { onConfirmar(pl.id); onFechar(); }, style: { width: \"100%\", padding: \"13px\", borderRadius: 12, border: \"1px solid #2a2a40\", background: \"transparent\", color: \"#6b6a80\", cursor: \"pointer\", fontFamily: \"'DM Sans',sans-serif\", fontWeight: 600, fontSize: 14 } }, \"J\\u00E1 paguei \\u2014 aguardando ativa\\u00E7\\u00E3o\"))));\n}\nfunction ConfigScreen({ profile, plano, setPlano, usosSemana, limiteSemana, indicados, setIndicados }) {\n    const [aviso, setAviso] = useState(\"\");\n    const [modalPlano, setModalPlano] = useState(null);\n    const [pendente, setPendente] = useState(null);\n    const COMISSAO = 0.40;\n    const codigo = (profile?.nome || \"criador\").toLowerCase().replace(/[^a-z0-9]/g, \"\").slice(0, 10) || \"criador\";\n    const ganhoPorPro = 99.9 * COMISSAO;\n    return (React.createElement(\"div\", { className: \"rise\" },\n        React.createElement(\"h2\", { className: \"disp\", style: { fontSize: 24, margin: \"16px 0 2px\", fontWeight: 700 } }, \"Configura\\u00E7\\u00F5es\"),\n        React.createElement(Sub, null,\n            \"Seu plano atual: \",\n            React.createElement(\"strong\", { style: { color: C.amber } }, plano)),\n        modalPlano && React.createElement(PagamentoModal, { plano: modalPlano, onFechar: () => setModalPlano(null), onConfirmar: (id) => { setPendente(id); setAviso(`Pagamento registrado! Plano ${id} ativado em at\u00e9 1 hora ap\u00f3s confirma\u00e7\u00e3o.`); } }),\n        PLANOS.map((pl) => {\n            const atual = pl.id === plano;\n            const aguardando = pendente === pl.id;\n            return (React.createElement(\"div\", { key: pl.id, style: { marginBottom: 12, padding: 16, borderRadius: 14, border: `1px solid ${atual ? pl.cor : C.line}`, background: atual ? \"rgba(168,85,247,.06)\" : C.card } },\n                React.createElement(\"div\", { style: { display: \"flex\", justifyContent: \"space-between\", alignItems: \"baseline\" } },\n                    React.createElement(\"span\", { className: \"disp\", style: { fontSize: 18, fontWeight: 700, color: pl.cor } }, pl.id),\n                    React.createElement(\"span\", { style: { fontWeight: 700 } }, pl.preco)),\n                React.createElement(\"p\", { style: { color: C.mute, fontSize: 13, margin: \"6px 0 12px\" } }, pl.linha),\n                atual ? (React.createElement(\"span\", { style: { fontSize: 12.5, color: C.amber, fontWeight: 600 } }, \"\\u2713 Plano atual\")) : aguardando ? (React.createElement(\"span\", { style: { fontSize: 12.5, color: C.green, fontWeight: 600 } }, \"\\u23F3 Aguardando ativa\\u00E7\\u00E3o\")) : pl.id !== \"Gr\u00e1tis\" ? (React.createElement(\"button\", { onClick: () => setModalPlano(pl), style: { padding: \"10px 18px\", borderRadius: 10, border: \"none\", cursor: \"pointer\", fontFamily: \"'DM Sans', sans-serif\", fontWeight: 700, fontSize: 13.5, background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: \"var(--onAccent)\" } },\n                    \"Assinar \",\n                    pl.id)) : null));\n        }),\n        plano !== \"Gr\u00e1tis\" && (React.createElement(\"button\", { onClick: () => { setPlano(\"Gr\u00e1tis\"); setAviso(\"Plano cancelado. Voc\u00ea voltou pro Gr\u00e1tis.\"); }, style: { width: \"100%\", padding: \"12px\", borderRadius: 12, border: `1px solid ${C.line}`, background: \"transparent\", color: C.rose, fontFamily: \"'DM Sans', sans-serif\", fontWeight: 600, fontSize: 14, cursor: \"pointer\", marginTop: 4 } }, \"Cancelar assinatura\")),\n        aviso && React.createElement(\"p\", { style: { marginTop: 14, fontSize: 13, color: C.amber, textAlign: \"center\" } }, aviso),\n        React.createElement(\"h2\", { className: \"disp\", style: { fontSize: 18, fontWeight: 700, margin: \"26px 0 4px\" } }, \"\\uD83C\\uDF81 Indique e ganhe\"),\n        React.createElement(\"p\", { style: { color: C.mute, fontSize: 13, margin: \"0 0 12px\", lineHeight: 1.5 } },\n            \"Ganhe \",\n            React.createElement(\"strong\", { style: { color: C.amber } }, \"40% do primeiro pagamento\"),\n            \" de cada pessoa que assinar pela sua indica\\u00E7\\u00E3o.\"),\n        React.createElement(\"div\", { style: { borderRadius: 14, border: `1px solid ${C.line}`, background: C.card, padding: 15 } },\n            React.createElement(\"span\", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: \"uppercase\" } }, \"Seu link de convite\"),\n            React.createElement(\"div\", { style: { marginTop: 8, display: \"flex\", gap: 8, alignItems: \"center\" } },\n                React.createElement(\"div\", { style: { flex: 1, padding: \"10px 12px\", borderRadius: 9, background: C.soft, border: `1px solid ${C.line}`, fontSize: 12.5, color: C.ink, wordBreak: \"break-all\" } },\n                    window.location.origin,\n                    \"/?ref=\",\n                    codigo),\n                React.createElement(\"button\", { onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/?ref=${codigo}`); setAviso(\"Link copiado!\"); setTimeout(() => setAviso(\"\"), 2000); }, style: { flexShrink: 0, padding: \"10px 14px\", borderRadius: 9, border: `1px solid ${C.amber}`, background: \"transparent\", color: C.amber, cursor: \"pointer\", fontFamily: \"'DM Sans',sans-serif\", fontWeight: 700, fontSize: 13 } }, \"Copiar\")),\n            React.createElement(\"div\", { style: { marginTop: 14, padding: \"12px 14px\", borderRadius: 10, background: \"rgba(126,224,138,.1)\", border: \"1px solid rgba(126,224,138,.35)\" } },\n                React.createElement(\"span\", { style: { fontSize: 11, color: C.mute, textTransform: \"uppercase\", letterSpacing: 1 } }, \"Indica\\u00E7\\u00F5es confirmadas\"),\n                React.createElement(\"div\", { className: \"disp\", style: { fontSize: 26, fontWeight: 800, color: C.green, marginTop: 2 } },\n                    indicados,\n                    \" \\u00D7 \",\n                    ganhoPorPro.toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" }),\n                    \" = \",\n                    (indicados * ganhoPorPro).toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" })),\n                React.createElement(\"p\", { style: { fontSize: 11.5, color: C.mute, margin: \"4px 0 0\" } }, \"40% de R$ 99,90 por assinatura confirmada\")),\n            React.createElement(\"p\", { style: { fontSize: 11.5, color: C.mute, margin: \"10px 0 0\", lineHeight: 1.5 } }, \"Quando algu\\u00E9m assinar pelo seu link, a comiss\\u00E3o \\u00E9 adicionada \\u00E0 sua carteira ap\\u00F3s confirma\\u00E7\\u00E3o do pagamento.\")),\n        React.createElement(\"p\", { style: { fontSize: 11, color: C.mute, textAlign: \"center\", marginTop: 18, opacity: .7, lineHeight: 1.5 } })));\n}\n// ---------- \u00e1rea de marcas (marketplace simulado) ----------\n// ---------- vagas para o CRIADOR (candidatar-se) ----------\nfunction MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {\n    const [chatAberto, setChatAberto] = useState(null);\n    const brl = (n) => Number(n || 0).toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" });\n    const meus = profile.metricas || { seguidores: 0, alcance: 0, eng: 0 };\n    const nichoMatch = (of) => {\n        const a = (of.nicho || \"\").toLowerCase().trim();\n        const b = (profile.nicho || \"\").toLowerCase().trim();\n        return !!a && !!b && (a.includes(b) || b.includes(a));\n    };\n    const combina = (of) => nichoMatch(of) && (!of.seguidoresMin || meus.seguidores >= of.seguidoresMin) && (!of.alcanceMin || meus.alcance >= of.alcanceMin);\n    function candidatar(of) {\n        if (!profile.verificado)\n            return;\n        setOfertas((arr) => arr.map((x) => {\n            if (x.id !== of.id)\n                return x;\n            if ((x.candidatos || []).some((c) => c.nome === (profile.nome || \"Criador\")))\n                return x;\n            const cand = { nome: profile.nome || \"Criador\", nicho: profile.nicho, seguidores: meus.seguidores, alcance: meus.alcance, eng: meus.eng, publico: profile.publico, plataformas: profile.plataformas, portfolio: profile.portfolio, status: \"pendente\" };\n            return { ...x, candidatos: [...(x.candidatos || []), cand] };\n        }));\n        notify && notify(\"marca\", `Novo candidato: ${profile.nome || \"Criador\"} se inscreveu em \"${of.titulo}\"`);\n    }\n    function enviarEntrega(of) {\n        setOf
+
+// ============================================================
+//  CREATOR STUDIO — protótipo completo
+//  • 7 abas (Dom→Sáb): clicou no dia, gera a pauta DAQUELE dia
+//  • Pauta do dia = tudo que postar (reels, story, vídeo longo...)
+//  • Chat, Perfil editável (multi-rede), Configurações de plano
+// ============================================================
+const C = {
+    bg: "var(--bg)", ink: "var(--ink)", mute: "var(--mute)",
+    amber: "var(--accent)", amberDeep: "var(--accent2)", rose: "var(--rose)",
+    green: "var(--green)", line: "var(--line)", card: "var(--card)", soft: "var(--soft)",
+    onAccent: "var(--onAccent)",
+};
+const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const ABREV = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const PLATAFORMAS = ["YouTube", "TikTok", "Instagram", "Twitch", "Kwai"];
+const FORMATOS = ["Live", "Vídeo longo", "Vídeo curto", "Carrossel / Post"];
+const OBJETIVOS = ["Crescer audiência", "Vender / converter", "Engajamento", "Autoridade"];
+const TONS = ["Hype / energia", "Didático", "Humor", "Inspiracional"];
+const FREQ = ["1-2x semana", "3-4x semana", "Todo dia"];
+const SEGUIDORES = ["Começando (<1k)", "1k - 10k", "10k - 100k", "100k+"];
+const PUBLICO = ["13-17", "18-24", "25-34", "35+"];
+const ENTREGAS = ["1 Reels", "3 Stories", "1 Vídeo longo", "Combo (Reels + Stories)"];
+const LOGOS = ["🏢", "🎮", "⚽", "🔥", "💎", "🛒", "🎯", "📱"];
+const CRIADORES_EXEMPLO = []; // sem exemplos — só criadores reais cadastrados
+const IDADE = ["Menor de 18", "18-24", "25-34", "35-44", "45+"];
+const TAXA_PLATAFORMA = 0.20; // % que a plataforma fica nos contratos com marcas
+const TAXA_PRODUTO = 0.05; // 5% sobre cada venda de produto — abaixo de todas as concorrentes
+function metricasDe(faixa) {
+    const m = {
+        "Começando (<1k)": { seguidores: 600, alcance: 250, eng: 9.0 },
+        "1k - 10k": { seguidores: 5200, alcance: 1800, eng: 7.5 },
+        "10k - 100k": { seguidores: 42000, alcance: 11000, eng: 5.5 },
+        "100k+": { seguidores: 320000, alcance: 68000, eng: 3.8 },
+    };
+    return m[faixa] || m["1k - 10k"];
+}
+function gerarPortfolio(nicho, plataformas) {
+    const p = (plataformas && plataformas.length) ? plataformas : ["Instagram"];
+    const base = nicho ? nicho : "conteúdo";
+    const cores = ["linear-gradient(135deg,#ff9d3d,#e87420)", "linear-gradient(135deg,var(--green),#3d9d5a)", "linear-gradient(135deg,#ff6b6b,#c0392b)", "linear-gradient(135deg,#6b8bff,#3d50c0)"];
+    const ideias = [`Tutorial: ${base}`, `Dicas rápidas de ${base}`, `Minha rotina de ${base}`, `Erros comuns em ${base}`];
+    return ideias.slice(0, 3).map((tit, i) => ({
+        id: `v${i}_${Date.now()}`,
+        titulo: tit,
+        views: [128000, 64000, 31000, 12000][i] || 9000,
+        plataforma: p[i % p.length],
+        cor: cores[i % cores.length],
+    }));
+}
+const stepBtn = { width: 40, height: 40, borderRadius: 10, border: `1px solid ${C.line}`, background: C.soft, color: C.amber, fontSize: 20, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" };
+// início da semana (domingo) como chave — usado pra contar usos e zerar a cada semana
+function chaveSemana(d = new Date()) {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    x.setDate(x.getDate() - x.getDay());
+    return x.toISOString().slice(0, 10);
+}
+// as 7 datas reais da semana atual (dom..sáb)
+function datasDaSemana() {
+    const x = new Date();
+    x.setHours(0, 0, 0, 0);
+    x.setDate(x.getDate() - x.getDay());
+    return [...Array(7)].map((_, i) => { const d = new Date(x); d.setDate(d.getDate() + i); return d; });
+}
+function iconeCena(t = "") {
+    const s = (t || "").toLowerCase();
+    if (s.includes("close") || s.includes("rosto") || s.includes("reaç") || s.includes("react"))
+        return "😮";
+    if (s.includes("game") || s.includes("tela") || s.includes("jogo") || s.includes("print"))
+        return "🎮";
+    if (s.includes("text") || s.includes("legenda"))
+        return "🔤";
+    if (s.includes("aç") || s.includes("moviment"))
+        return "⚡";
+    return "🎬";
+}
+function entregaTexto(e) {
+    if (!e)
+        return "";
+    const p = [];
+    if (e.reels)
+        p.push(`${e.reels} Reels`);
+    if (e.stories)
+        p.push(`${e.stories} Stories`);
+    if (e.longos)
+        p.push(`${e.longos} Vídeo${e.longos > 1 ? "s" : ""} longo${e.longos > 1 ? "s" : ""}`);
+    return p.join(" · ");
+}
+function idadeDe(nasc) {
+    if (!nasc)
+        return "";
+    const d = new Date(nasc);
+    if (isNaN(d))
+        return "";
+    const hoje = new Date();
+    let i = hoje.getFullYear() - d.getFullYear();
+    const m = hoje.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < d.getDate()))
+        i--;
+    return i;
+}
+function statusCampanha(of) {
+    const cs = of.candidatos || [];
+    const conc = cs.filter((c) => c.status === "concluido").length;
+    const ativos = cs.filter((c) => ["aprovado", "entregue", "concluido"].includes(c.status)).length;
+    if ((of.qtd || 1) <= conc)
+        return { txt: "Concluída", cor: "var(--green)", bg: "rgba(62,224,163,.16)" };
+    if (ativos > 0)
+        return { txt: "Em andamento", cor: "var(--accent)", bg: "rgba(168,85,247,.16)" };
+    return { txt: "Aberta", cor: "var(--mute)", bg: "rgba(154,144,191,.16)" };
+}
+function mediaNota(notas) {
+    const v = notas.filter((n) => n > 0);
+    if (!v.length)
+        return 0;
+    return Math.round((v.reduce((a, n) => a + n, 0) / v.length) * 10) / 10;
+}
+function StarRating({ value = 0, onRate, readOnly }) {
+    return (React.createElement("span", { style: { display: "inline-flex", gap: 2 } }, [1, 2, 3, 4, 5].map((n) => (React.createElement("span", { key: n, onClick: () => !readOnly && onRate && onRate(n), style: { cursor: readOnly ? "default" : "pointer", fontSize: 16, lineHeight: 1, color: n <= Math.round(value) ? "#ffcf4d" : "#43392f" } }, "\u2605")))));
+}
+function NotifBell({ items, para, open, setOpen, onRead }) {
+    const meus = items.filter((i) => i.para === para);
+    const naoLidas = meus.filter((i) => !i.lida).length;
+    return (React.createElement("div", { style: { position: "relative" } },
+        React.createElement("button", { onClick: () => { setOpen(!open); if (!open)
+                onRead(); }, style: { position: "relative", background: "none", border: "none", color: C.mute, cursor: "pointer", lineHeight: 1, padding: 4 } },
+            React.createElement(Icon, { name: "bell", size: 21, stroke: 1.7 }),
+            naoLidas > 0 && React.createElement("span", { style: { position: "absolute", top: 0, right: 0, background: C.rose, color: "#fff", fontSize: 9.5, fontWeight: 700, minWidth: 15, height: 15, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px", border: `1.5px solid ${C.bg}` } }, naoLidas)),
+        open && (React.createElement(React.Fragment, null,
+            React.createElement("div", { onClick: () => setOpen(false), style: { position: "fixed", inset: 0, zIndex: 40 } }),
+            React.createElement("div", { className: "rise", style: { position: "absolute", right: 0, top: 36, width: 270, maxWidth: "80vw", zIndex: 41, background: "var(--card)", border: `1px solid ${C.line}`, borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,.5)", overflow: "hidden" } },
+                React.createElement("div", { style: { padding: "10px 14px", borderBottom: `1px solid ${C.line}`, fontSize: 12, letterSpacing: 1.5, color: C.amber, textTransform: "uppercase", fontWeight: 700 } }, "Notifica\u00E7\u00F5es"),
+                React.createElement("div", { style: { maxHeight: 280, overflowY: "auto" } }, meus.length === 0 ? (React.createElement("p", { style: { padding: "18px 14px", color: C.mute, fontSize: 13, textAlign: "center", margin: 0 } }, "Nada por aqui ainda.")) : meus.map((n) => (React.createElement("div", { key: n.id, style: { padding: "11px 14px", borderBottom: `1px solid ${C.line}`, fontSize: 13, color: C.ink, lineHeight: 1.4 } }, n.text)))))))));
+}
+function PortfolioStrip({ videos }) {
+    if (!videos || !videos.length)
+        return null;
+    return (React.createElement("div", { style: { display: "flex", gap: 8, overflowX: "auto", marginTop: 10, paddingBottom: 4 } }, videos.map((v) => (React.createElement("div", { key: v.id, style: { flex: "0 0 auto", width: 104 } },
+        React.createElement("div", { style: { height: 64, borderRadius: 9, background: v.cor || "linear-gradient(135deg,#ff9d3d,#e87420)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#fff", position: "relative" } },
+            "\u25B6",
+            React.createElement("span", { style: { position: "absolute", bottom: 4, right: 6, fontSize: 9, background: "rgba(0,0,0,.45)", padding: "1px 5px", borderRadius: 5 } }, v.plataforma)),
+        React.createElement("p", { style: { fontSize: 10.5, color: C.ink, margin: "4px 0 0", lineHeight: 1.25, height: 26, overflow: "hidden" } }, v.titulo),
+        React.createElement("p", { style: { fontSize: 10, color: C.mute, margin: 0 } },
+            (v.views || 0).toLocaleString("pt-BR"),
+            " views"))))));
+}
+function ChatThread({ msgs, onSend, eu }) {
+    const [t, setT] = useState("");
+    const send = () => { if (!t.trim())
+        return; onSend(t.trim()); setT(""); };
+    return (React.createElement("div", { style: { marginTop: 10, padding: 10, borderRadius: 11, background: "var(--soft)", border: `1px solid ${C.line}` } },
+        React.createElement("div", { style: { maxHeight: 150, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 } },
+            (!msgs || msgs.length === 0) && React.createElement("p", { style: { fontSize: 12, color: C.mute, textAlign: "center", margin: "8px 0" } }, "Sem mensagens. Diga ol\u00E1 \uD83D\uDC4B"),
+            (msgs || []).map((m, i) => (React.createElement("div", { key: i, style: { alignSelf: m.from === eu ? "flex-end" : "flex-start", maxWidth: "82%", padding: "7px 10px", borderRadius: 11, fontSize: 13, lineHeight: 1.4,
+                    background: m.from === eu ? `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})` : C.card, color: m.from === eu ? "var(--onAccent)" : C.ink, border: m.from === eu ? "none" : `1px solid ${C.line}` } }, m.text)))),
+        React.createElement("div", { style: { display: "flex", gap: 6 } },
+            React.createElement("input", { value: t, onChange: (e) => setT(e.target.value), onKeyDown: (e) => e.key === "Enter" && send(), placeholder: "Mensagem...", style: { flex: 1, padding: "10px 12px", borderRadius: 9, border: `1px solid ${C.line}`, background: C.soft, color: C.ink, fontSize: 13.5, outline: "none", fontFamily: "'DM Sans', sans-serif" } }),
+            React.createElement("button", { onClick: send, style: { padding: "0 14px", borderRadius: 9, border: "none", cursor: "pointer", fontSize: 16, background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: "var(--onAccent)" } }, "\u2191"))));
+}
+// ---------- tela de login ----------
+function AuthScreen({ onAuth }) {
+    const [tela, setTela] = useState("escolha"); // "escolha" | "login" | "cadastro"
+    const [papel, setPapel] = useState(null);
+    const [email, setEmail] = useState("");
+    const [senha, setSenha] = useState("");
+    const [confirmar, setConfirmar] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [msg, setMsg] = useState({ tipo: "", texto: "" });
+    const sb = window._sb;
+    async function entrarComGoogle() {
+        const sb = window._sb;
+        if (!sb) {
+            setMsg({ tipo: "erro", texto: "Configure o Supabase primeiro." });
+            return;
+        }
+        const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+        if (error)
+            setMsg({ tipo: "erro", texto: "Google não está habilitado ainda. Use e-mail por enquanto." });
+    }
+    async function entrarComFacebook() {
+        const sb = window._sb;
+        if (!sb) {
+            setMsg({ tipo: "erro", texto: "Configure o Supabase primeiro." });
+            return;
+        }
+        await sb.auth.signInWithOAuth({ provider: "facebook", options: { redirectTo: window.location.origin } });
+    }
+    async function entrar() {
+        if (!email.trim() || !senha) {
+            setMsg({ tipo: "erro", texto: "Preencha e-mail e senha." });
+            return;
+        }
+        setLoading(true);
+        setMsg({ tipo: "", texto: "" });
+        if (!sb) {
+            onAuth(papel || "criador");
+            return;
+        }
+        const { error } = await sb.auth.signInWithPassword({ email: email.trim(), password: senha });
+        setLoading(false);
+        if (error)
+            setMsg({ tipo: "erro", texto: "E-mail ou senha incorretos." });
+    }
+    async function cadastrar() {
+        if (!papel) {
+            setMsg({ tipo: "erro", texto: "Escolha seu perfil antes." });
+            return;
+        }
+        if (!email.trim() || !senha) {
+            setMsg({ tipo: "erro", texto: "Preencha e-mail e senha." });
+            return;
+        }
+        if (senha.length < 6) {
+            setMsg({ tipo: "erro", texto: "Senha mínima: 6 caracteres." });
+            return;
+        }
+        if (senha !== confirmar) {
+            setMsg({ tipo: "erro", texto: "As senhas não coincidem." });
+            return;
+        }
+        setLoading(true);
+        setMsg({ tipo: "", texto: "" });
+        if (!sb) {
+            onAuth(papel);
+            return;
+        }
+        const refCode = localStorage.getItem("cria_ref") || null;
+        const { error } = await sb.auth.signUp({
+            email: email.trim(), password: senha,
+            options: {
+                data: { papel, referido_por: refCode },
+                emailRedirectTo: window.location.origin, // volta pro app após confirmar
+            }
+        });
+        setLoading(false);
+        if (error)
+            setMsg({ tipo: "erro", texto: error.message });
+        else
+            setMsg({ tipo: "ok", texto: "📧 Enviamos um e-mail de confirmação. Clique no link e você entrará automaticamente!" });
+    }
+    const inp = { width: "100%", padding: "13px 14px", borderRadius: 11, border: `1px solid ${C.line}`, background: C.soft, color: C.ink, fontSize: 15, fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box", marginBottom: 10 };
+    const GoogleBtn = ({ texto }) => (React.createElement("button", { onClick: entrarComGoogle, style: { width: "100%", padding: "13px", borderRadius: 12, border: "1px solid #dadce0", cursor: "pointer", background: "#fff", color: "#1a1a1a", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 14.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 } },
+        React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24" },
+            React.createElement("path", { fill: "#4285F4", d: "M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" }),
+            React.createElement("path", { fill: "#34A853", d: "M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" }),
+            React.createElement("path", { fill: "#FBBC05", d: "M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" }),
+            React.createElement("path", { fill: "#EA4335", d: "M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" })),
+        texto));
+    return (React.createElement("div", { style: { maxWidth: 420, margin: "0 auto", minHeight: "100dvh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "30px 22px", backgroundImage: `radial-gradient(circle at 50% 0%, rgba(168,85,247,.18), transparent 55%)` } },
+        React.createElement("div", { style: { textAlign: "center", marginBottom: 26 } },
+            React.createElement("div", { style: { width: 66, height: 66, margin: "0 auto 16px", filter: "drop-shadow(0 10px 26px rgba(168,85,247,.45))" } },
+                React.createElement(LogoMark, { size: 66 })),
+            React.createElement(Wordmark, { size: 42, gradient: true }),
+            React.createElement("p", { style: { color: C.mute, fontSize: 14.5, margin: "8px 0 0" } }, "Onde criador vira neg\u00F3cio. Bora? \uD83D\uDE80")),
+        tela === "escolha" && (React.createElement(React.Fragment, null,
+            React.createElement("p", { style: { textAlign: "center", fontWeight: 700, fontSize: 15, color: C.ink, marginBottom: 14 } }, "Como voc\u00EA vai usar o Cria?"),
+            [["criador", "🎬", "Sou Criador de Conteúdo", "Pautas, roteiros, colabs e campanhas com marcas"], ["marca", "🏢", "Sou uma Marca / Empresa", "Contratar criadores e divulgar meus produtos"]].map(([id, emoji, titulo, desc]) => (React.createElement("button", { key: id, onClick: () => { setPapel(id); setTela("cadastro"); }, style: { width: "100%", textAlign: "left", padding: "16px", borderRadius: 14, marginBottom: 10, cursor: "pointer", border: `1px solid ${C.line}`, background: C.card, fontFamily: "'DM Sans',sans-serif", display: "flex", gap: 12, alignItems: "center" } },
+                React.createElement("span", { style: { fontSize: 28, flexShrink: 0 } }, emoji),
+                React.createElement("span", null,
+                    React.createElement("span", { className: "disp", style: { display: "block", fontSize: 15.5, fontWeight: 700, color: C.ink } }, titulo),
+                    React.createElement("span", { style: { display: "block", fontSize: 12.5, color: C.mute, marginTop: 2 } }, desc)),
+                React.createElement("span", { style: { marginLeft: "auto", color: C.mute, fontSize: 18 } }, "\u203A")))),
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, margin: "14px 0" } },
+                React.createElement("div", { style: { flex: 1, height: 1, background: C.line } }),
+                React.createElement("span", { style: { color: C.mute, fontSize: 12 } }, "j\u00E1 tenho conta"),
+                React.createElement("div", { style: { flex: 1, height: 1, background: C.line } })),
+            React.createElement("button", { onClick: () => setTela("login"), style: { width: "100%", padding: "13px", borderRadius: 12, border: `1px solid ${C.line}`, cursor: "pointer", background: "transparent", color: C.ink, fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14.5 } }, "Entrar na minha conta"))),
+        tela === "cadastro" && (React.createElement(React.Fragment, null,
+            React.createElement("button", { onClick: () => { setTela("escolha"); setMsg({ tipo: "", texto: "" }); }, style: { background: "none", border: "none", color: C.mute, fontSize: 13, cursor: "pointer", padding: "0 0 14px", alignSelf: "flex-start" } }, "\u2190 Voltar"),
+            React.createElement("div", { style: { padding: "10px 14px", borderRadius: 10, background: "rgba(168,85,247,.1)", border: `1px solid ${C.amber}`, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 } },
+                React.createElement("span", { style: { fontSize: 22 } }, papel === "criador" ? "🎬" : "🏢"),
+                React.createElement("span", { style: { fontSize: 13.5, fontWeight: 700, color: C.amber } }, papel === "criador" ? "Criador de Conteúdo" : "Marca / Empresa")),
+            React.createElement(GoogleBtn, { texto: `Cadastrar como ${papel === "criador" ? "Criador" : "Marca"} com Google` }),
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 12 } },
+                React.createElement("div", { style: { flex: 1, height: 1, background: C.line } }),
+                React.createElement("span", { style: { color: C.mute, fontSize: 12 } }, "ou com e-mail"),
+                React.createElement("div", { style: { flex: 1, height: 1, background: C.line } })),
+            React.createElement("input", { style: inp, type: "email", placeholder: "Seu e-mail", value: email, onChange: e => setEmail(e.target.value) }),
+            React.createElement("input", { style: inp, type: "password", placeholder: "Senha (m\u00EDn. 6 caracteres)", value: senha, onChange: e => setSenha(e.target.value) }),
+            React.createElement("input", { style: inp, type: "password", placeholder: "Confirmar senha", value: confirmar, onChange: e => setConfirmar(e.target.value) }),
+            msg.texto && React.createElement("p", { style: { fontSize: 13, color: msg.tipo === "ok" ? C.green : C.rose, margin: "0 0 12px", lineHeight: 1.5 } }, msg.texto),
+            React.createElement("button", { onClick: cadastrar, disabled: loading, style: { width: "100%", padding: "14px", borderRadius: 12, border: "none", cursor: loading ? "default" : "pointer", background: loading ? C.mute : `linear-gradient(135deg,${C.amber},${C.amberDeep})`, color: "var(--onAccent)", fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14.5 } }, loading ? "Criando conta..." : "Criar conta"),
+            React.createElement("p", { style: { textAlign: "center", marginTop: 14, fontSize: 13.5, color: C.mute } },
+                "J\u00E1 tem conta? ",
+                React.createElement("button", { onClick: () => setTela("login"), style: { background: "none", border: "none", color: C.amber, cursor: "pointer", fontWeight: 700, fontSize: 13.5, padding: 0 } }, "Entrar")))),
+        tela === "login" && (React.createElement(React.Fragment, null,
+            React.createElement("button", { onClick: () => { setTela("escolha"); setMsg({ tipo: "", texto: "" }); }, style: { background: "none", border: "none", color: C.mute, fontSize: 13, cursor: "pointer", padding: "0 0 14px", alignSelf: "flex-start" } }, "\u2190 Voltar"),
+            React.createElement(GoogleBtn, { texto: "Entrar com Google" }),
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 12 } },
+                React.createElement("div", { style: { flex: 1, height: 1, background: C.line } }),
+                React.createElement("span", { style: { color: C.mute, fontSize: 12 } }, "ou com e-mail"),
+                React.createElement("div", { style: { flex: 1, height: 1, background: C.line } })),
+            React.createElement("input", { style: inp, type: "email", placeholder: "Seu e-mail", value: email, onChange: e => setEmail(e.target.value) }),
+            React.createElement("input", { style: inp, type: "password", placeholder: "Sua senha", value: senha, onChange: e => setSenha(e.target.value) }),
+            msg.texto && React.createElement("p", { style: { fontSize: 13, color: msg.tipo === "ok" ? C.green : C.rose, margin: "0 0 12px", lineHeight: 1.5 } }, msg.texto),
+            React.createElement("button", { onClick: entrar, disabled: loading, style: { width: "100%", padding: "14px", borderRadius: 12, border: "none", cursor: loading ? "default" : "pointer", background: loading ? C.mute : `linear-gradient(135deg,${C.amber},${C.amberDeep})`, color: "var(--onAccent)", fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14.5 } }, loading ? "Entrando..." : "Entrar"),
+            React.createElement("p", { style: { textAlign: "center", marginTop: 14, fontSize: 13.5, color: C.mute } },
+                "N\u00E3o tem conta? ",
+                React.createElement("button", { onClick: () => setTela("escolha"), style: { background: "none", border: "none", color: C.amber, cursor: "pointer", fontWeight: 700, fontSize: 13.5, padding: 0 } }, "Cadastrar"))))));
+}
+const PLANOS = [
+    { id: "Grátis", preco: "R$ 0", linha: "2 pautas por semana", cor: C.mute, limiteSemana: 2, nivel: 0 },
+    { id: "Criador", preco: "R$ 59,90/mês", linha: "4 pautas/semana · roteiros extras · colab, produtos e parcerias com marcas", cor: C.amber, limiteSemana: 4, nivel: 1 },
+    { id: "Pro", preco: "R$ 99,90/mês", linha: "7 pautas/semana · roteiros e dicas extras · destaque pras marcas (aparece primeiro) + tudo liberado", cor: C.rose, limiteSemana: 7, nivel: 2 },
+];
+// leitor tolerante: lê o JSON; se vier cortado, salva o que chegou
+function lerJSON(raw) {
+    const limpo = raw.replace(/```json|```/g, "").trim();
+    try {
+        return JSON.parse(limpo.slice(limpo.indexOf("{"), limpo.lastIndexOf("}") + 1));
+    }
+    catch (_) { }
+    const posts = [];
+    const a = limpo.indexOf("[");
+    if (a !== -1) {
+        let d = 0, s = -1;
+        for (let i = a; i < limpo.length; i++) {
+            const c = limpo[i];
+            if (c === "{") {
+                if (d === 0)
+                    s = i;
+                d++;
+            }
+            else if (c === "}") {
+                d--;
+                if (d === 0 && s !== -1) {
+                    try {
+                        posts.push(JSON.parse(limpo.slice(s, i + 1)));
+                    }
+                    catch (_) { }
+                    s = -1;
+                }
+            }
+        }
+    }
+    const foco = limpo.match(/"foco_do_dia"\s*:\s*"([^"]*)"/);
+    return { foco_do_dia: foco ? foco[1] : "", posts };
+}
+async function chamarIA({ system, messages }) {
+    const r = await fetch("/api/claude", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 1000, system, messages }),
+    });
+    const j = await r.json();
+    if (j.type === "error") {
+        const tipo = j.error?.type || "";
+        if (tipo === "rate_limit_error")
+            throw new Error("RATE_LIMIT");
+        if (tipo === "overloaded_error")
+            throw new Error("SOBRECARGA");
+        throw new Error("Erro da IA: " + (j.error?.message || tipo).slice(0, 120));
+    }
+    const txt = (j.content || []).map((b) => (b.type === "text" ? b.text : "")).join("\n");
+    if (!txt)
+        throw new Error("Resposta vazia: " + JSON.stringify(j).slice(0, 120));
+    return txt;
+}
+const HOLD_DIAS = 7; // dias de retenção (CDC: 7 dias de arrependimento para compras online)
+function App() {
+    const [profile, setProfile] = useState({ nome: "", foto: "", genero: "", nascimento: "", nicho: "", plataformas: [], formato: [], objetivo: [], tom: [], freq: "", seguidores: "", publico: "", handles: {}, portfolio_links: [], loja_banner: "", loja_descricao: "" });
+    const setupOk = profile.nome && profile.nascimento && profile.nicho && profile.plataformas.length && profile.formato.length && profile.objetivo.length && profile.tom.length && profile.freq && profile.seguidores;
+    const [tab, setTab] = useState("dashboard");
+    const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+    const [dias, setDias] = useState({}); // { [nomeDia]: {loading, erro, data} }
+    const [chat, setChat] = useState([]);
+    const [desempenho, setDesempenho] = useState({}); // { "Dia|idx": "bombou" | "medio" | "fraco" }
+    const [ajustes, setAjustes] = useState([]); // instruções permanentes pedidas no chat
+    const [ofertas, setOfertas] = useState([]); // campanhas publicadas por marcas
+    const [mensagens, setMensagens] = useState({}); // { "ofId|nomeCriador": [{from, text, t}] }
+    const addMsg = (ofId, nome, from, text) => setMensagens((m) => {
+        const k = `${ofId}|${nome}`;
+        return { ...m, [k]: [...(m[k] || []), { from, text, t: Date.now() }] };
+    });
+    const [notificacoes, setNotificacoes] = useState([]); // { id, para: 'criador'|'marca', text, lida }
+    const [notifOpen, setNotifOpen] = useState(false);
+    const notify = (para, text) => setNotificacoes((n) => [{ id: Date.now() + Math.random(), para, text, lida: false }, ...n]);
+    const [marcaProfile, setMarcaProfile] = useState({ logo: "", banner: "", nome: "", segmento: "", sobre: "", site: "", categorias: [] });
+    const [authed, setAuthed] = useState(false);
+    const [papel, setPapel] = useState("criador");
+    const [sbUid, setSbUid] = useState(null);
+    const [sbLoad, setSbLoad] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [perfilLoad, setPerfilLoad] = useState(false);
+    // AUTO-SAVE rascunhos no localStorage
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            try {
+                localStorage.setItem("cria_draft_profile", JSON.stringify(profile));
+                if (papel === "marca")
+                    localStorage.setItem("cria_draft_marca", JSON.stringify(marcaProfile));
+            }
+            catch (e) { }
+        }, 1500); // debounce de 1.5s
+        return () => clearTimeout(timer);
+    }, [profile, marcaProfile, papel]);
+    // RESTAURAR rascunho se perfil não está salvo no banco ainda
+    useEffect(() => {
+        if (!authed || !window._sb)
+            return;
+        const draftProfile = localStorage.getItem("cria_draft_profile");
+        const draftMarca = localStorage.getItem("cria_draft_marca");
+        if (draftProfile && !profile.nome) {
+            try {
+                setProfile(JSON.parse(draftProfile));
+            }
+            catch (e) { }
+        }
+        if (draftMarca && papel === "marca" && !marcaProfile.nome) {
+            try {
+                setMarcaProfile(JSON.parse(draftMarca));
+            }
+            catch (e) { }
+        }
+    }, [authed]);
+    useEffect(() => {
+        const ref = new URLSearchParams(window.location.search).get("ref");
+        if (ref)
+            localStorage.setItem("cria_ref", ref);
+    }, []);
+    // Sessão Supabase — checa login salvo e escuta mudanças
+    useEffect(() => {
+        const sb = window._sb;
+        if (!sb) {
+            setSbLoad(false);
+            setPerfilLoad(false);
+            return;
+        }
+        // Timeout de segurança: SEMPRE para o loading após 4s, não importa o que aconteça
+        const timeout = setTimeout(() => {
+            console.warn("Timeout: forçando loading=false");
+            setSbLoad(false);
+            setPerfilLoad(false);
+        }, 4000);
+        sb.auth.getSession().then(function (res) {
+            var session = res && res.data && res.data.session;
+            clearTimeout(timeout);
+            if (session) {
+                setAuthed(true);
+                setSbUid(session.user.id);
+                var p = (session.user.user_metadata && session.user.user_metadata.papel) || "criador";
+                setPapel(p);
+                carregarPerfilSb(session.user.id);
+            }
+            else {
+                setPerfilLoad(false);
+            }
+            setSbLoad(false);
+        }).catch(function (err) {
+            console.error("getSession erro:", err);
+            clearTimeout(timeout);
+            setSbLoad(false);
+            setPerfilLoad(false);
+        });
+        var sub = sb.auth.onAuthStateChange(function (event, session) {
+            if (event === "SIGNED_IN") {
+                setAuthed(true);
+                if (session) {
+                    setSbUid(session.user.id);
+                    var p = (session.user.user_metadata && session.user.user_metadata.papel) || "criador";
+                    setPapel(p);
+                    carregarPerfilSb(session.user.id);
+                }
+            }
+            else if (event === "TOKEN_REFRESHED" && session) {
+                setAuthed(true);
+                setSbUid(session.user.id);
+            }
+            else if (!session) {
+                setAuthed(false);
+                setSbUid(null);
+                setPerfilLoad(false);
+            }
+        });
+        return function () { sub.data && sub.data.subscription && sub.data.subscription.unsubscribe(); };
+    }, []);
+    async function carregarPerfilSb(uid) {
+        setPerfilLoad(true);
+        const sb = window._sb;
+        if (!sb) {
+            setPerfilLoad(false);
+            return;
+        }
+        try {
+            const { data } = await sb.from("profiles").select("*").eq("id", uid).single();
+            if (!data) {
+                setPerfilLoad(false);
+                return;
+            }
+            setProfile({ nome: data.nome || "", foto: data.foto_url || "", genero: data.genero || "", nascimento: data.nascimento || "", nicho: data.nicho || "", plataformas: data.plataformas || [], formato: data.formatos || [], objetivo: data.objetivos || [], tom: data.tons || [], freq: data.frequencia || "", seguidores: data.seguidores || "", publico: data.publico || "", handles: data.handles || {}, portfolio_links: data.portfolio_links || [] });
+            if (data.papel)
+                setPapel(data.papel);
+            if (data.plano && data.plano !== "Grátis") {
+                const vence = data.plano_vence ? new Date(data.plano_vence) : null;
+                const ativo = vence && vence > new Date();
+                setPlano(ativo ? data.plano : "Grátis");
+                if (!ativo && data.plano !== "Grátis")
+                    await sb.from("profiles").update({ plano: "Grátis" }).eq("id", uid);
+            }
+            if (data.marca_data) {
+                try {
+                    const md = JSON.parse(data.marca_data);
+                    setMarcaProfile(md);
+                    // Restaurar produtos salvos da marca
+                    if (md._produtos && md._produtos.length > 0) {
+                        setProdutos(prev => {
+                            const outros = prev.filter(p => p.dono !== md.nome);
+                            return [...md._produtos, ...outros];
+                        });
+                    }
+                }
+                catch (e) { }
+            }
+            if (data.indicados)
+                setIndicados(data.indicados);
+            if (data.sacado)
+                setSacado(data.sacado);
+        }
+        catch (e) {
+            console.error("Erro ao carregar perfil:", e);
+        }
+        finally {
+            setPerfilLoad(false);
+        }
+    }
+    async function salvarPerfilSb(novoProfile) {
+        const sb = window._sb;
+        if (!sb || !sbUid)
+            return;
+        // colunas base — existem no schema original
+        const dados = {
+            papel,
+            nome: novoProfile.nome || null,
+            foto_url: novoProfile.foto || null,
+            genero: novoProfile.genero || null,
+            nascimento: novoProfile.nascimento || null,
+            nicho: novoProfile.nicho || null,
+            plataformas: novoProfile.plataformas || [],
+            formatos: novoProfile.formato || [],
+            objetivos: novoProfile.objetivo || [],
+            tons: novoProfile.tom || [],
+            frequencia: novoProfile.freq || null,
+            seguidores: novoProfile.seguidores || null,
+            publico: novoProfile.publico || null,
+            updated_at: new Date().toISOString(),
+        };
+        // colunas extras (da migração) — adiciona se existirem
+        if (novoProfile.handles)
+            dados.handles = novoProfile.handles;
+        if (novoProfile.portfolio_links)
+            dados.portfolio_links = novoProfile.portfolio_links;
+        if (novoProfile.loja_banner !== undefined)
+            dados.loja_banner = novoProfile.loja_banner;
+        if (novoProfile.loja_descricao !== undefined)
+            dados.loja_descricao = novoProfile.loja_descricao;
+        const { error } = await sb.from("profiles").update(dados).eq("id", sbUid);
+        if (error)
+            console.error("Erro ao salvar perfil:", error.message);
+        else
+            console.log("✅ Perfil salvo no Supabase");
+    }
+    async function salvarLojasSb(novoMarcaProfile) {
+        const sb = window._sb;
+        if (!sb || !sbUid)
+            return;
+        await sb.from("profiles").update({ marca_data: JSON.stringify(novoMarcaProfile) }).eq("id", sbUid);
+        localStorage.setItem("cria_draft_marca", JSON.stringify(novoMarcaProfile));
+    }
+    async function setPlanoComSync(p) {
+        setPlano(p);
+        const sb = window._sb;
+        if (!sb || !sbUid)
+            return;
+        await sb.from("profiles").update({ plano: p }).eq("id", sbUid);
+    }
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [tema, setTema] = useState("dark");
+    const [plano, setPlano] = useState("Grátis");
+    const [uso, setUso] = useState({ semana: chaveSemana(), n: 0 });
+    const [indicados, setIndicados] = useState(0);
+    const [sacado, setSacado] = useState(0);
+    const [arquivados, setArquivados] = useState([]); // histórico de todas as pautas geradas
+    const [colabs, setColabs] = useState([]);
+    const [produtos, setProdutos] = useState([]);
+    const [vendas, setVendas] = useState([]);
+    // AUTO-SAVE produtos da marca no Supabase (após produtos declarado)
+    useEffect(() => {
+        if (papel !== "marca" || !sbUid || !marcaProfile.nome)
+            return;
+        const meusProd = produtos.filter(p => p.dono === marcaProfile.nome);
+        const timer = setTimeout(() => {
+            salvarLojasSb({ ...marcaProfile, _produtos: meusProd });
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [produtos, papel, sbUid]);
+    const hoje = new Date().getDay();
+    const planoAtual = PLANOS.find((p) => p.id === plano) || PLANOS[0];
+    const limiteSemana = planoAtual.limiteSemana;
+    const planoNivel = planoAtual.nivel;
+    const usosSemana = uso.semana === chaveSemana() ? uso.n : 0;
+    const datasSemana = datasDaSemana();
+    const jaFez = chat.filter((m) => m.role === "user").slice(-4).map((m) => m.text).join("; ");
+    function resumoDesempenho() {
+        const bom = [], ruim = [];
+        Object.entries(desempenho).forEach(([k, r]) => {
+            const [d, ix] = k.split("|");
+            const post = dias[d]?.data?.posts?.[Number(ix)];
+            if (!post)
+                return;
+            const label = `${post.formato}: ${post.tema}`;
+            if (r === "bombou")
+                bom.push(label);
+            else if (r === "fraco")
+                ruim.push(label);
+        });
+        return { bom, ruim };
+    }
+    const dp = resumoDesempenho();
+    const formatosTop = [...new Set(dp.bom.map((s) => s.split(":")[0]))];
+    function perfilTexto() {
+        return `- Nicho: ${profile.nicho}
+- Redes: ${profile.plataformas.join(", ")}
+- Formatos que produz: ${profile.formato.join(", ")}
+- Objetivos (MESCLE todos no mesmo dia): ${profile.objetivo.join(", ")}
+- Tom (mescle os escolhidos): ${profile.tom.join(", ")}
+- Frequência: ${profile.freq}
+- Tamanho da audiência: ${profile.seguidores}
+- Idade do criador: ${idadeDe(profile.nascimento) || "?"} anos
+- Público principal: ${profile.publico || "não informado"}`;
+    }
+    const pautasGeradas = Object.values(dias).filter((v) => v?.data).length;
+    const bombouCount = Object.values(desempenho).filter((r) => r === "bombou").length;
+    const xp = pautasGeradas * 10 + bombouCount * 25;
+    const nivel = Math.floor(xp / 100) + 1;
+    const xpNoNivel = xp % 100;
+    const meuNome = profile.nome || "Criador";
+    const isDisponivel = (data) => {
+        if (!data)
+            return false;
+        const d = new Date(data);
+        d.setDate(d.getDate() + HOLD_DIAS);
+        return d <= new Date();
+    };
+    let ganhoLiberado = 0, ganhoPendente = 0, ganhoEmAnalise = 0;
+    ofertas.forEach((of) => (of.candidatos || []).forEach((c) => {
+        if (c.nome !== meuNome)
+            return;
+        const base = (of.valor || 0) * (1 - TAXA_PLATAFORMA);
+        const bonusLiq = (of.bonus || 0) * (1 - TAXA_PLATAFORMA);
+        if (c.status === "concluido") {
+            if (isDisponivel(c.concluido_em)) {
+                ganhoLiberado += base;
+                if (c.bonusLiberado)
+                    ganhoLiberado += bonusLiq;
+                else if (of.meta > 0 && c.resultado == null)
+                    ganhoPendente += bonusLiq;
+            }
+            else {
+                ganhoEmAnalise += base + (c.bonusLiberado ? bonusLiq : 0);
+            }
+        }
+        else if (c.status === "aprovado" || c.status === "entregue") {
+            ganhoPendente += base + (of.meta > 0 ? bonusLiq : 0);
+        }
+    }));
+    const liquido = (v) => v.preco * (1 - TAXA_PRODUTO);
+    const ganhoAfiliado = (vendas || []).filter((v) => v.afiliado === meuNome).reduce((s, v) => s + liquido(v) * v.comissao / 100, 0);
+    const ganhoDonoProd = (vendas || []).filter((v) => v.dono === meuNome).reduce((s, v) => s + (v.afiliado ? liquido(v) * (1 - v.comissao / 100) : liquido(v)), 0);
+    const ganhoProdutos = ganhoAfiliado + ganhoDonoProd;
+    const ganhoIndicacao = indicados * (99.9 * 0.40);
+    const totalGanho = ganhoLiberado + ganhoProdutos + ganhoIndicacao;
+    const totalEmAnalise = ganhoEmAnalise + (ganhoProdutos > 0 ? 0 : 0); // produtos são liberados imediatamente (sem escrow)
+    async function gerarDia(diaIdx) {
+        const nome = DIAS[diaIdx];
+        const atual = dias[nome] || {};
+        const existe = !!atual.data;
+        const refeitos = atual.refeitos || 0;
+        const ehRedoGratis = existe && refeitos < 1; // 1 refação grátis por pauta
+        // dia que já passou nesta semana não gera
+        if (diaIdx < hoje) {
+            setDias((o) => ({ ...o, [nome]: { loading: false, erro: `${nome} já passou nesta semana. Gere para hoje ou os próximos dias.`, data: null } }));
+            return;
+        }
+        // limite semanal do plano (não acumula — zera toda semana). Refação grátis não consome uso.
+        if (!ehRedoGratis && usosSemana >= limiteSemana) {
+            setDias((o) => ({ ...o, [nome]: { loading: false, erro: `LIMITE`, data: null, refeitos } }));
+            return;
+        }
+        setDias((o) => ({ ...o, [nome]: { loading: true, erro: null, data: null } }));
+        const qtdPosts = planoNivel >= 2 ? "3 a 4" : planoNivel >= 1 ? "2 a 3" : "exatamente 2";
+        const dicaExtra = planoNivel >= 2 ? `Para cada post, inclua também o campo "dica" com uma dica curta de distribuição/algoritmo.` : "";
+        const outros = Object.entries(dias)
+            .filter(([k, v]) => k !== nome && v?.data?.posts?.length)
+            .flatMap(([, v]) => v.data.posts.map((p) => p.tema))
+            .join("; ");
+        const prompt = `Perfil do criador:
+${perfilTexto()}
+
+Monte a PAUTA DE ${nome.toUpperCase()}. Pense no que costuma bombar nesse nicho e no que pode estar em alta por volta desse dia (tendências sazonais, lançamentos, e como o público se comporta nesse dia da semana). Respeite a frequência: em dias de menor produção, sugira formatos leves (story, enquete).
+
+Liste TUDO que a pessoa deve postar nesse dia — pode misturar formatos (Reels, Story, Vídeo longo, etc.) — sempre alinhado aos objetivos dela.
+${outros ? `NÃO repita estes temas já planejados: ${outros}.` : ""}
+${jaFez ? `O criador já fez recentemente (não repita): ${jaFez}.` : ""}
+${dp.bom.length ? `O que BOMBOU pra esse criador (priorize formatos/abordagens parecidos): ${dp.bom.join("; ")}.` : ""}
+${dp.ruim.length ? `O que foi FRACO (evite esse tipo): ${dp.ruim.join("; ")}.` : ""}
+${ajustes.length ? `AJUSTES que o criador pediu — siga à risca em TODAS as pautas: ${ajustes.join("; ")}.` : ""}
+
+Responda APENAS com JSON válido, sem texto extra e sem markdown. Seja CONCISO (frases curtas, roteiro até 3 passos). Para cada post inclua um "storyboard" de 2 a 3 quadros descrevendo o que mostrar na tela em cada cena (NÃO gere imagens, só a descrição visual). ${dicaExtra} Gere ${qtdPosts} posts:
+{
+  "foco_do_dia": "1 frase com a intenção do dia",
+  "posts": [
+    { "formato": "Reels", "tema": "...", "gancho": "...", "roteiro": ["passo 1", "passo 2", "passo 3"], "storyboard": [{"tipo": "ex: close / gameplay / reação", "cena": "o que aparece na tela", "texto_tela": "texto sobreposto na cena"}], "cta": "...", "melhor_horario": "ex: 19h", "hashtags": ["#..."] }
+  ]
+}`;
+        try {
+            const txt = await chamarIA({
+                system: "Você é um estrategista de conteúdo que entrega pautas prontas. Sempre responde só com JSON válido, sem markdown.",
+                messages: [{ role: "user", content: prompt }],
+            });
+            const data = lerJSON(txt);
+            if (!data.posts || data.posts.length === 0)
+                throw new Error("Não veio nenhum post completo. Toca em gerar outro.");
+            setDias((o) => ({ ...o, [nome]: { loading: false, erro: null, data, refeitos: existe ? refeitos + 1 : 0 } }));
+            setArquivados((a) => [{ id: Date.now(), dia: nome, data: new Date().toISOString(), foco: data.foco_do_dia, posts: data.posts }, ...a]);
+            if (!ehRedoGratis)
+                setUso((u) => { const wk = chaveSemana(); const base = u.semana === wk ? u.n : 0; return { semana: wk, n: base + 1 }; });
+        }
+        catch (e) {
+            const msg = String(e.message || e);
+            const erroFinal = msg === "RATE_LIMIT" ? "RATE_LIMIT"
+                : msg === "SOBRECARGA" ? "A IA está sobrecarregada agora. Aguarde 1 minuto e tente de novo."
+                    : msg;
+            setDias((o) => ({ ...o, [nome]: { loading: false, erro: erroFinal, data: null, refeitos } }));
+        }
+    }
+    function selecionarDia(idx) {
+        setSelectedDay(idx);
+        const nome = DIAS[idx];
+        if (!dias[nome])
+            gerarDia(idx);
+    }
+    return (React.createElement("div", { "data-theme": tema, style: { minHeight: "100vh", background: C.bg, color: C.ink, fontFamily: "'DM Sans', sans-serif", transition: "background .3s" } },
+        React.createElement("button", { onClick: () => setTema((t) => t === "dark" ? "light" : "dark"), title: "Alternar tema", style: { position: "fixed", left: 16, bottom: 18, zIndex: 50, width: 38, height: 38, borderRadius: "50%", border: `1px solid ${C.line}`, background: C.card, color: C.mute, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: .85 } },
+            React.createElement(Icon, { name: tema === "dark" ? "sol" : "lua", size: 18, stroke: 1.7 })),
+        React.createElement("style", null, `
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+        [data-theme="dark"]{
+          --bg:#0e0a1a; --card:#191230; --soft:#150f28; --line:#2c2348;
+          --ink:#f2efff; --mute:#9a90bf;
+          --accent:#a855f7; --accent2:#7c3aed; --rose:#ff5d8f; --green:#3ee0a3; --onAccent:#ffffff;
+        }
+        [data-theme="light"]{
+          --bg:#f6f3fc; --card:#ffffff; --soft:#f1ecfa; --line:#e6dff5;
+          --ink:#1b1430; --mute:#6c6390;
+          --accent:#7c3aed; --accent2:#9333ea; --rose:#e0356f; --green:#10a877; --onAccent:#ffffff;
+        }
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
+        .rise{animation:rise .4s ease both}
+        .disp{font-family:'Bricolage Grotesque',sans-serif}
+        .noscroll::-webkit-scrollbar{display:none}
+      `),
+        (sbLoad || perfilLoad) ? (React.createElement("div", { style: { minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--bg)", gap: 16 } },
+            React.createElement("div", { style: { width: 40, height: 40, borderRadius: "50%", border: `3px solid ${C.line}`, borderTopColor: C.amber, animation: "spin .8s linear infinite" } }),
+            React.createElement("p", { style: { color: C.mute, fontSize: 13 } }, "Carregando..."))) : !authed ? (React.createElement(AuthScreen, { onAuth: (p) => { setAuthed(true); setPapel(p); if (p === "marca")
+                setTab("marcas"); } })) : papel === "marca" ? (React.createElement(BrandApp, { profile: profile, plano: plano, ofertas: ofertas, setOfertas: setOfertas, marcaProfile: marcaProfile, setMarcaProfile: setMarcaProfile, mensagens: mensagens, addMsg: addMsg, notify: notify, notificacoes: notificacoes, setNotificacoes: setNotificacoes, produtos: produtos, setProdutos: setProdutos, vendas: vendas, onSalvarLoja: salvarLojasSb, onTrocar: () => { window._sb?.auth.signOut(); setAuthed(false); setPapel(null); setMenuOpen(false); }, onSair: () => { window._sb?.auth.signOut(); setAuthed(false); setMenuOpen(false); } })) : !setupOk ? (React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", padding: "30px 18px 60px",
+                backgroundImage: `radial-gradient(circle at 80% -5%, rgba(168,85,247,.12), transparent 50%)` } },
+            React.createElement(Marca, null),
+            React.createElement("h2", { className: "disp", style: { fontSize: 26, margin: "22px 0 4px", fontWeight: 700 } }, "Bora montar seu perfil"),
+            React.createElement(Sub, null, "\u00C9 com isso que o app entrega tudo mastigado pra voc\u00EA."),
+            React.createElement(ProfileForm, { value: profile, onSave: (d) => { setProfile(d); salvarPerfilSb(d); setTab("dashboard"); }, modo: "setup" }))) : (React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", padding: "26px 18px 96px",
+                backgroundImage: `radial-gradient(circle at 80% -5%, rgba(168,85,247,.12), transparent 50%)` } },
+            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between" } },
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                    React.createElement("button", { onClick: () => setMenuOpen(true), style: { background: "none", border: "none", color: C.ink, fontSize: 24, cursor: "pointer", padding: "4px 6px 4px 0", lineHeight: 1 } }, "\u2630"),
+                    React.createElement(Marca, null)),
+                React.createElement(NotifBell, { items: notificacoes, para: "criador", open: notifOpen, setOpen: setNotifOpen, onRead: () => setNotificacoes((ns) => ns.map((x) => x.para === "criador" ? { ...x, lida: true } : x)) })),
+            menuOpen && (React.createElement(React.Fragment, null,
+                React.createElement("div", { onClick: () => setMenuOpen(false), style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.55)", zIndex: 30 } }),
+                React.createElement("div", { className: "rise", style: { position: "fixed", top: 0, left: 0, bottom: 0, width: 260, maxWidth: "80%", zIndex: 31, background: "var(--bg)", borderRight: `1px solid ${C.line}`, padding: "22px 0", overflowY: "auto", boxShadow: "8px 0 30px rgba(0,0,0,.5)" } },
+                    React.createElement("div", { style: { padding: "0 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                        React.createElement(Marca, null),
+                        React.createElement("button", { onClick: () => setMenuOpen(false), style: { background: "none", border: "none", color: C.mute, fontSize: 22, cursor: "pointer", lineHeight: 1 } }, "\u00D7")),
+                    React.createElement("div", { onClick: () => { setTab("perfil"); setMenuOpen(false); }, style: { display: "flex", alignItems: "center", gap: 10, padding: "0 18px 14px", margin: "0 0 6px", cursor: "pointer", borderBottom: `1px solid ${C.line}` } },
+                        profile.foto ? React.createElement("img", { src: profile.foto, alt: "", style: { width: 42, height: 42, borderRadius: "50%", objectFit: "cover" } })
+                            : React.createElement("div", { style: { width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${C.amber}, ${C.rose})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", fontSize: 18 } }, (meuNome || "C").charAt(0).toUpperCase()),
+                        React.createElement("div", { style: { minWidth: 0 } },
+                            React.createElement("div", { className: "disp", style: { fontSize: 14.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, meuNome),
+                            React.createElement("div", { style: { fontSize: 11.5, color: C.amber } }, "Ver perfil"))),
+                    [["dashboard", "Dashboard"], ["plano", "Plano"], ["chat", "Chat"], ["marcas", "Marcas"], ["colabs", "Colabs"], ["produtos", "Produtos"], ["carteira", "Carteira"], ["arquivados", "Arquivados"], ["perfil", "Perfil"], ["config", "Configurações"]].map(([id, lb]) => (React.createElement("button", { key: id, onClick: () => { setTab(id); setMenuOpen(false); }, style: {
+                            display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", padding: "13px 18px", background: tab === id ? "rgba(168,85,247,.12)" : "transparent",
+                            border: "none", borderLeft: `3px solid ${tab === id ? C.amber : "transparent"}`, color: tab === id ? C.amber : C.ink, fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer"
+                        } },
+                        React.createElement(Icon, { name: id, size: 19, color: tab === id ? "var(--accent)" : "var(--mute)" }),
+                        lb))),
+                    React.createElement("button", { onClick: () => { window._sb?.auth.signOut(); setAuthed(false); setPapel(null); setMenuOpen(false); }, style: {
+                            display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", padding: "13px 18px", marginTop: 8, borderTop: `1px solid ${C.line}`, background: "transparent", border: "none", color: C.ink, fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer"
+                        } },
+                        React.createElement(Icon, { name: "swap", size: 19, color: "var(--mute)" }),
+                        "Trocar de conta"),
+                    React.createElement("button", { onClick: () => { window._sb?.auth.signOut(); setAuthed(false); setMenuOpen(false); }, style: {
+                            display: "flex", alignItems: "center", gap: 13, width: "100%", textAlign: "left", padding: "13px 18px", background: "transparent", border: "none", color: C.rose, fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer"
+                        } },
+                        React.createElement(Icon, { name: "sair", size: 19, color: "var(--rose)" }),
+                        "Sair")))),
+            tab === "dashboard" && (React.createElement(DashboardScreen, { profile: profile, plano: plano, usosSemana: usosSemana, limiteSemana: limiteSemana, ganhoMarcas: ganhoLiberado, ganhoProdutos: ganhoProdutos, ganhoIndicacao: ganhoIndicacao, totalGanho: totalGanho, sacado: sacado, ganhoPendente: ganhoPendente, ofertas: ofertas, vendas: vendas, colabs: colabs, arquivados: arquivados, produtos: produtos, onIr: (t) => setTab(t) })),
+            tab === "plano" && (React.createElement("div", { className: "rise" },
+                React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Sua semana"),
+                React.createElement(Sub, null, "Toque num dia \u2014 o app gera a pauta completa dele na hora."),
+                React.createElement("div", { style: { borderRadius: 16, padding: 16, marginBottom: 16, border: `1px solid ${C.line}`, background: `linear-gradient(135deg, rgba(168,85,247,.1), rgba(255,107,107,.06))` } },
+                    React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                        React.createElement("span", { className: "disp", style: { fontSize: 17, fontWeight: 700 } },
+                            "\u26A1 N\u00EDvel ",
+                            nivel),
+                        React.createElement("span", { style: { fontSize: 12.5, color: C.amber, fontWeight: 600 } },
+                            "\uD83D\uDCB0 ",
+                            ganhoLiberado.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }))),
+                    React.createElement("div", { style: { height: 8, borderRadius: 8, background: C.line, marginTop: 10, overflow: "hidden" } },
+                        React.createElement("div", { style: { height: "100%", width: `${xpNoNivel}%`, background: `linear-gradient(90deg, ${C.amber}, ${C.rose})`, transition: "width .4s" } })),
+                    React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11.5, color: C.mute } },
+                        React.createElement("span", null,
+                            pautasGeradas,
+                            " pautas \u00B7 ",
+                            bombouCount,
+                            " bombaram"),
+                        React.createElement("span", null,
+                            xpNoNivel,
+                            "/100 XP")),
+                    React.createElement("p", { style: { fontSize: 11, color: C.mute, margin: "10px 0 0", opacity: .75 } }, ganhoPendente > 0 ? `${ganhoPendente.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} a receber (entregas em andamento).` : "Feche campanhas com marcas pra começar a faturar.")),
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", borderRadius: 12, marginBottom: 14, background: C.card, border: `1px solid ${C.line}` } },
+                    React.createElement("span", { style: { fontSize: 13, color: C.ink } },
+                        "Pautas desta semana ",
+                        React.createElement("span", { style: { color: C.mute } },
+                            "\u00B7 plano ",
+                            plano)),
+                    React.createElement("span", { style: { fontSize: 13.5, fontWeight: 700, color: usosSemana >= limiteSemana ? C.rose : C.green } },
+                        usosSemana,
+                        "/",
+                        limiteSemana === Infinity ? "∞" : limiteSemana)),
+                formatosTop.length > 0 && (React.createElement("div", { style: { padding: "10px 14px", borderRadius: 12, marginBottom: 14, background: "rgba(168,85,247,.08)", border: `1px solid ${C.line}` } },
+                    React.createElement("span", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: "uppercase" } }, "\uD83D\uDCCA T\u00E1 funcionando pra voc\u00EA"),
+                    React.createElement("p", { style: { margin: "5px 0 0", fontSize: 13.5, lineHeight: 1.4 } },
+                        formatosTop.join(", "),
+                        " \u2014 o app vai priorizar isso nas pr\u00F3ximas pautas."))),
+                React.createElement("div", { className: "noscroll", style: { display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, margin: "4px -2px 16px" } }, DIAS.map((d, i) => {
+                    const on = selectedDay === i;
+                    const pronto = !!dias[d]?.data;
+                    const passou = i < hoje;
+                    return (React.createElement("button", { key: d, onClick: () => selecionarDia(i), style: {
+                            flex: "0 0 auto", padding: "8px 12px", borderRadius: 12, cursor: "pointer", position: "relative", textAlign: "center", minWidth: 50,
+                            border: `1px solid ${on ? C.amber : C.line}`, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 13,
+                            background: on ? `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})` : "transparent",
+                            color: on ? "var(--onAccent)" : C.ink, opacity: passou && !on ? .4 : 1,
+                        } },
+                        React.createElement("div", null, ABREV[i]),
+                        React.createElement("div", { style: { fontSize: 11, fontWeight: 600, opacity: .8 } }, datasSemana[i].getDate()),
+                        i === hoje && React.createElement("span", { style: { position: "absolute", top: -6, right: -3, fontSize: 8, background: C.rose, color: "#fff", padding: "1px 4px", borderRadius: 6 } }, "hoje"),
+                        pronto && i !== hoje && React.createElement("span", { style: { position: "absolute", top: 5, right: 6, width: 5, height: 5, borderRadius: 5, background: on ? "var(--onAccent)" : C.amber } })));
+                })),
+                React.createElement(DiaConteudo, { dia: DIAS[selectedDay], estado: dias[DIAS[selectedDay]], onGerar: () => gerarDia(selectedDay), onUpgrade: () => { setTab("config"); }, desempenho: desempenho, onRate: (idx, r) => setDesempenho((o) => {
+                        const key = `${DIAS[selectedDay]}|${idx}`;
+                        return { ...o, [key]: o[key] === r ? null : r };
+                    }) }))),
+            tab === "chat" && (React.createElement(ChatScreen, { chat: chat, setChat: setChat, perfilTexto: perfilTexto, ajustes: ajustes, addAjuste: (a) => setAjustes((p) => (p.includes(a) ? p : [...p, a])), removeAjuste: (a) => setAjustes((p) => p.filter((x) => x !== a)), onNovoNicho: (n) => { setProfile((p) => ({ ...p, nicho: n })); setDias({}); setDesempenho({}); } })),
+            tab === "perfil" && (React.createElement("div", { className: "rise" },
+                React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Seu perfil"),
+                React.createElement(Sub, null, "Mudou de estrat\u00E9gia? Edite aqui \u2014 isso atualiza as pr\u00F3ximas pautas."),
+                React.createElement(ProfileForm, { value: profile, onSave: (d) => { setProfile(d); salvarPerfilSb(d); setDias({}); }, modo: "editar" }))),
+            tab === "marcas" && (planoNivel >= 1 ? React.createElement(MarcasScreen, { profile: profile, plano: plano, ofertas: ofertas, setOfertas: setOfertas, mensagens: mensagens, addMsg: addMsg, notify: notify }) : React.createElement(BloqueioPlano, { titulo: "\uD83D\uDD12 Apenas para assinantes", sub: "As parcerias com marcas s\u00E3o exclusivas dos planos pagos. Assine pra se candidatar \u00E0s campanhas e faturar.", onIr: () => setTab("config") })),
+            tab === "carteira" && React.createElement(CarteiraScreen, { disponivel: totalGanho - sacado, pendente: ganhoPendente, total: totalGanho, sacado: sacado, ganhoMarcas: ganhoLiberado, ganhoProdutos: ganhoProdutos, ganhoIndicacao: ganhoIndicacao, emAnalise: totalEmAnalise, holdDias: HOLD_DIAS, onSacar: (v) => setSacado((s) => s + v) }),
+            tab === "produtos" && React.createElement(AfiliadosScreen, { profile: profile, produtos: produtos, setProdutos: setProdutos, vendas: vendas, setVendas: setVendas }),
+            tab === "colabs" && (planoNivel >= 1 ? React.createElement(ColabsScreen, { profile: profile, colabs: colabs, setColabs: setColabs }) : React.createElement(BloqueioPlano, { titulo: "Colabs", sub: "Dispon\u00EDvel a partir do plano Criador. Fa\u00E7a upgrade pra colaborar com outros criadores.", onIr: () => setTab("config") })),
+            tab === "arquivados" && React.createElement(ArquivadosScreen, { itens: arquivados }),
+            tab === "config" && React.createElement(ConfigScreen, { profile: profile, plano: plano, setPlano: setPlanoComSync, usosSemana: usosSemana, limiteSemana: limiteSemana, indicados: indicados, setIndicados: setIndicados })))));
+}
+// ---------- conteúdo do dia ----------
+function DiaConteudo({ dia, estado, onGerar, desempenho, onRate, onUpgrade }) {
+    const [verEx, setVerEx] = useState({});
+    if (!estado) {
+        return (React.createElement("div", { style: { textAlign: "center", padding: "40px 10px" } },
+            React.createElement("p", { style: { color: C.mute, fontSize: 14 } },
+                "Nenhuma pauta gerada pra ",
+                dia,
+                " ainda."),
+            React.createElement(Botao, { onClick: onGerar, style: { maxWidth: 240, margin: "16px auto 0" } },
+                "\u26A1 Gerar pauta de ",
+                dia)));
+    }
+    if (estado.loading) {
+        return (React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "50px 0" } },
+            React.createElement("div", { style: { width: 34, height: 34, border: `3px solid ${C.line}`, borderTopColor: C.amber, borderRadius: "50%", animation: "spin .9s linear infinite" } }),
+            React.createElement("p", { style: { color: C.amber, animation: "glow 2s ease infinite" } },
+                "Montando a pauta de ",
+                dia,
+                "...")));
+    }
+    if (estado.erro === "RATE_LIMIT") {
+        return (React.createElement("div", { style: { padding: 18, borderRadius: 14, background: "rgba(255,180,0,.08)", border: "1px solid rgba(255,180,0,.35)", textAlign: "center" } },
+            React.createElement("div", { style: { fontSize: 30 } }, "\u23F3"),
+            React.createElement("strong", { className: "disp", style: { display: "block", fontSize: 16, marginTop: 6 } }, "Muitas gera\u00E7\u00F5es simult\u00E2neas"),
+            React.createElement("p", { style: { fontSize: 13, color: C.mute, margin: "8px 0 14px", lineHeight: 1.5 } }, "O servi\u00E7o de IA atingiu o limite de requisi\u00E7\u00F5es por hora. Aguarde alguns minutos e tente de novo \u2014 seus outros dias n\u00E3o s\u00E3o afetados."),
+            React.createElement(Botao, { onClick: onGerar, style: { maxWidth: 220, marginLeft: "auto", marginRight: "auto" } }, "Tentar de novo")));
+    }
+    if (estado.erro === "LIMITE") {
+        return (React.createElement("div", { style: { padding: 18, borderRadius: 14, background: "rgba(168,85,247,.1)", border: "1px solid rgba(168,85,247,.4)", textAlign: "center" } },
+            React.createElement("div", { style: { fontSize: 30 } }, "\uD83D\uDD12"),
+            React.createElement("strong", { className: "disp", style: { display: "block", fontSize: 17, marginTop: 6 } }, "Voc\u00EA usou todas as pautas da semana"),
+            React.createElement("p", { style: { fontSize: 13, color: C.mute, margin: "8px 0 0", lineHeight: 1.5 } }, "Seu limite zera no pr\u00F3ximo domingo. Pra gerar mais agora, fa\u00E7a upgrade do plano."),
+            onUpgrade && React.createElement(Botao, { onClick: onUpgrade, style: { marginTop: 14, maxWidth: 220, marginLeft: "auto", marginRight: "auto" } }, "Ver planos")));
+    }
+    if (estado.erro) {
+        return (React.createElement("div", { style: { padding: 14, borderRadius: 12, background: "#2a1414", border: "1px solid #4a2020" } },
+            React.createElement("strong", { style: { color: C.rose } }, "Opa."),
+            React.createElement("p", { style: { fontSize: 12.5, color: "#ffb3b3", margin: "8px 0 0", wordBreak: "break-word" } }, estado.erro),
+            React.createElement(Botao, { onClick: onGerar, style: { marginTop: 14 } }, "Tentar de novo")));
+    }
+    const { foco_do_dia, posts } = estado.data;
+    return (React.createElement("div", { className: "rise" },
+        foco_do_dia && (React.createElement("div", { style: { padding: "12px 15px", borderRadius: 12, marginBottom: 16, background: "rgba(168,85,247,.08)", borderLeft: `3px solid ${C.amber}` } },
+            React.createElement("span", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: "uppercase" } },
+                "Foco de ",
+                dia),
+            React.createElement("p", { style: { margin: "5px 0 0", fontSize: 14, lineHeight: 1.5 } }, foco_do_dia))),
+        posts.map((post, i) => (React.createElement("div", { key: i, className: "rise", style: { animationDelay: `${i * 0.07}s`, marginBottom: 14, borderRadius: 16, border: `1px solid ${C.line}`, background: C.card, overflow: "hidden" } },
+            React.createElement("div", { style: { padding: "14px 16px 0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 } },
+                React.createElement("span", { style: { fontSize: 11, padding: "3px 10px", borderRadius: 20, background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: "var(--onAccent)", fontWeight: 700 } }, post.formato),
+                post.melhor_horario && React.createElement("span", { style: { fontSize: 12, color: C.mute } },
+                    "\uD83D\uDD50 ",
+                    post.melhor_horario)),
+            React.createElement("div", { style: { padding: "8px 16px 16px" } },
+                React.createElement("h3", { className: "disp", style: { fontSize: 19, margin: "4px 0 0", lineHeight: 1.15, fontWeight: 700 } }, post.tema),
+                React.createElement(Bloco, { rotulo: "\uD83E\uDE9D Gancho", texto: post.gancho, cor: C.amber }),
+                post.roteiro?.length > 0 && (React.createElement("div", { style: { marginTop: 11 } },
+                    React.createElement(Rot, null, "\uD83C\uDFAC Roteiro"),
+                    React.createElement("ol", { style: { margin: "6px 0 0", padding: 0, listStyle: "none" } }, post.roteiro.map((b, k) => (React.createElement("li", { key: k, style: { display: "flex", gap: 9, marginBottom: 6, fontSize: 13.5, lineHeight: 1.45 } },
+                        React.createElement("span", { style: { flex: "0 0 auto", width: 20, height: 20, borderRadius: 6, background: C.line, color: C.amber, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700 } }, k + 1),
+                        React.createElement("span", null, b))))))),
+                post.storyboard?.length > 0 && (React.createElement("div", { style: { marginTop: 12 } },
+                    React.createElement(Rot, null, "\uD83D\uDCF1 Storyboard (o que filmar)"),
+                    React.createElement("div", { className: "noscroll", style: { display: "flex", gap: 8, overflowX: "auto", marginTop: 8, paddingBottom: 4 } }, post.storyboard.map((q, k) => (React.createElement("div", { key: k, style: { flex: "0 0 auto", width: 124, borderRadius: 12, border: `1px solid ${C.line}`, background: C.soft, overflow: "hidden" } },
+                        React.createElement("div", { style: { height: 86, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 8, textAlign: "center", background: "linear-gradient(160deg, rgba(168,85,247,.12), rgba(255,107,107,.06))", position: "relative" } },
+                            React.createElement("span", { style: { position: "absolute", top: 5, left: 6, fontSize: 9, color: C.amber, fontWeight: 700 } }, k + 1),
+                            React.createElement("span", { style: { fontSize: 18 } }, iconeCena(q.tipo)),
+                            q.texto_tela && React.createElement("span", { style: { fontSize: 9.5, color: C.ink, fontWeight: 700, marginTop: 4, lineHeight: 1.2 } },
+                                "\"",
+                                q.texto_tela,
+                                "\"")),
+                        React.createElement("div", { style: { padding: "7px 8px" } },
+                            React.createElement("span", { style: { fontSize: 9, color: C.amber, textTransform: "uppercase", letterSpacing: .5, fontWeight: 700 } }, q.tipo),
+                            React.createElement("p", { style: { fontSize: 11, color: C.ink, margin: "3px 0 0", lineHeight: 1.3 } }, q.cena)))))))),
+                post.cta && (React.createElement("div", { style: { marginTop: 11, padding: "8px 12px", borderRadius: 9, background: "rgba(255,107,107,.1)", borderLeft: `3px solid ${C.rose}`, fontSize: 13 } },
+                    React.createElement("strong", { style: { color: C.rose } }, "CTA:"),
+                    " ",
+                    post.cta)),
+                post.hashtags?.length > 0 && (React.createElement("div", { style: { marginTop: 10, display: "flex", flexWrap: "wrap", gap: 6 } }, post.hashtags.map((h, k) => React.createElement("span", { key: k, style: { fontSize: 11.5, color: C.amber, background: "rgba(168,85,247,.1)", padding: "2px 8px", borderRadius: 6 } }, h)))),
+                React.createElement("div", { style: { marginTop: 12, paddingTop: 12, borderTop: `1px solid ${C.line}`, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" } },
+                    React.createElement("span", { style: { fontSize: 11.5, color: C.mute } }, "J\u00E1 postou? Como foi?"),
+                    [["bombou", "🔥 Bombou"], ["medio", "👍 Médio"], ["fraco", "👎 Fraco"]].map(([v, lb]) => {
+                        const sel = desempenho[`${dia}|${i}`] === v;
+                        return (React.createElement("button", { key: v, onClick: () => onRate(i, v), style: {
+                                padding: "5px 10px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                                border: `1px solid ${sel ? C.amber : C.line}`, background: sel ? "rgba(168,85,247,.15)" : "transparent", color: sel ? C.amber : C.mute,
+                            } }, lb));
+                    })),
+                React.createElement("button", { onClick: () => setVerEx((o) => ({ ...o, [i]: !o[i] })), style: {
+                        width: "100%", marginTop: 10, padding: "9px", borderRadius: 9, cursor: "pointer", background: "transparent",
+                        border: `1px dashed ${C.line}`, color: C.amber, fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, fontWeight: 600
+                    } }, verEx[i] ? "Ocultar exemplo visual" : "📱 Ver exemplo visual"),
+                verEx[i] && (React.createElement("div", { className: "noscroll", style: { display: "flex", gap: 8, overflowX: "auto", marginTop: 10, paddingBottom: 4 } }, [{ tag: "Abertura", txt: post.gancho }, ...(post.roteiro || []).map((b, k) => ({ tag: `Cena ${k + 1}`, txt: b })), { tag: "Final / CTA", txt: post.cta }]
+                    .filter((f) => f.txt).map((f, k) => (React.createElement("div", { key: k, style: { flex: "0 0 auto", width: 112, height: 200, borderRadius: 12, padding: 10, display: "flex", flexDirection: "column", justifyContent: "space-between",
+                        background: `linear-gradient(160deg, rgba(168,85,247,${0.22 - k * 0.02}), rgba(255,107,107,.12)), ${C.soft}`, border: `1px solid ${C.line}` } },
+                    React.createElement("span", { style: { fontSize: 9.5, fontWeight: 700, color: "var(--onAccent)", background: C.amber, alignSelf: "flex-start", padding: "2px 7px", borderRadius: 6 } }, f.tag),
+                    React.createElement("span", { style: { fontSize: 11, lineHeight: 1.35, color: C.ink, fontWeight: 600 } }, f.txt),
+                    React.createElement("span", { style: { fontSize: 8.5, color: C.mute, textAlign: "right" } }, post.formato)))))))))),
+        React.createElement("button", { onClick: onGerar, style: { width: "100%", padding: "12px", borderRadius: 12, cursor: "pointer", background: "transparent",
+                border: `1px solid ${C.line}`, color: C.mute, fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, marginTop: 4 } },
+            "\uD83D\uDD04 ",
+            (estado.refeitos || 0) < 1 ? "Não curtiu? Refazer essa pauta (grátis)" : "Refazer de novo (usa 1 pauta da semana)"),
+        React.createElement("p", { style: { fontSize: 11, color: C.mute, textAlign: "center", marginTop: 14, opacity: .7 } }, "Tend\u00EAncias estimadas pela IA. Feed ao vivo entra na vers\u00E3o com backend.")));
+}
+// ---------- chat / área de ajustes ----------
+function ChatScreen({ chat, setChat, perfilTexto, ajustes, addAjuste, removeAjuste, onNovoNicho }) {
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    async function enviar() {
+        const msg = input.trim();
+        if (!msg || loading)
+            return;
+        const novo = [...chat, { role: "user", text: msg }];
+        setChat(novo);
+        setInput("");
+        setLoading(true);
+        try {
+            const txt = await chamarIA({
+                system: `Você é o assistente do Cria. Perfil atual do criador:
+${perfilTexto()}
+Ajustes já ativos: ${ajustes.length ? ajustes.join("; ") : "nenhum"}.
+
+O criador pode pedir pra você dar mais ênfase em algo, mudar o foco do conteúdo, ou avisar que trocou de nicho. Quando ele pedir um ajuste, transforme em uma instrução curta e imperativa pra valer nas próximas pautas.
+
+Responda SEMPRE apenas com JSON válido, sem markdown:
+{
+  "resposta": "resposta curta e prática (máx 3 frases), confirmando o que será ajustado",
+  "ajuste": "instrução curta e imperativa pra guardar, OU null se não for um pedido de ajuste",
+  "novo_nicho": "o novo nicho SE ele disse que mudou de nicho, senão null"
+}`,
+                messages: novo.map((m) => ({ role: m.role, content: m.text })),
+            });
+            // parse tolerante: se falhar, mostra o texto cru como resposta
+            let resposta = txt.trim(), ajuste = null, novoNicho = null;
+            try {
+                const obj = JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
+                resposta = obj.resposta || resposta;
+                ajuste = obj.ajuste && obj.ajuste !== "null" ? obj.ajuste : null;
+                novoNicho = obj.novo_nicho && obj.novo_nicho !== "null" ? obj.novo_nicho : null;
+            }
+            catch (_) { }
+            const extras = [];
+            if (ajuste) {
+                addAjuste(ajuste);
+                extras.push({ role: "sys", text: `✓ Ajuste salvo: ${ajuste}` });
+            }
+            if (novoNicho) {
+                onNovoNicho(novoNicho);
+                extras.push({ role: "sys", text: `🔄 Nicho atualizado para "${novoNicho}". As pautas foram resetadas.` });
+            }
+            setChat([...novo, { role: "assistant", text: resposta }, ...extras]);
+        }
+        catch (e) {
+            setChat([...novo, { role: "assistant", text: "Deu um erro aqui: " + String(e.message || e) }]);
+        }
+        finally {
+            setLoading(false);
+        }
+    }
+    return (React.createElement("div", { className: "rise" },
+        React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Assistente"),
+        React.createElement(Sub, null, "Pe\u00E7a melhorias (\"d\u00E1 mais \u00EAnfase em dribles\") ou avise se mudou de nicho \u2014 o app aplica nas pr\u00F3ximas pautas."),
+        ajustes.length > 0 && (React.createElement("div", { style: { marginBottom: 14, padding: "10px 12px", borderRadius: 12, border: `1px solid ${C.line}`, background: "rgba(168,85,247,.06)" } },
+            React.createElement("span", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: "uppercase" } }, "\u2699\uFE0F Ajustes ativos"),
+            React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 } }, ajustes.map((a) => (React.createElement("span", { key: a, style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, background: C.card, border: `1px solid ${C.line}`, padding: "4px 6px 4px 10px", borderRadius: 8 } },
+                a,
+                React.createElement("button", { onClick: () => removeAjuste(a), style: { background: "none", border: "none", color: C.mute, cursor: "pointer", fontSize: 14, lineHeight: 1 } }, "\u00D7"))))))),
+        React.createElement("div", { style: { minHeight: 180, display: "flex", flexDirection: "column", gap: 10, marginBottom: 14 } },
+            chat.length === 0 && React.createElement("p", { style: { color: C.mute, fontSize: 13.5, textAlign: "center", padding: "26px 0" } }, "Ex: \"foca mais em v\u00EDdeos curtos e d\u00E1 \u00EAnfase em humor\""),
+            chat.map((m, i) => {
+                if (m.role === "sys")
+                    return (React.createElement("div", { key: i, style: { alignSelf: "center", fontSize: 12, color: C.amber, background: "rgba(168,85,247,.1)", padding: "6px 12px", borderRadius: 10, textAlign: "center" } }, m.text));
+                return (React.createElement("div", { key: i, style: { alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "85%",
+                        padding: "10px 13px", borderRadius: 14, fontSize: 14, lineHeight: 1.5,
+                        background: m.role === "user" ? `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})` : C.card,
+                        color: m.role === "user" ? "var(--onAccent)" : C.ink, border: m.role === "user" ? "none" : `1px solid ${C.line}` } }, m.text));
+            }),
+            loading && React.createElement("div", { style: { alignSelf: "flex-start", color: C.mute, fontSize: 13, padding: "6px 4px" } }, "digitando...")),
+        React.createElement("div", { style: { display: "flex", gap: 8 } },
+            React.createElement("input", { value: input, onChange: (e) => setInput(e.target.value), onKeyDown: (e) => e.key === "Enter" && enviar(), placeholder: "Pe\u00E7a uma melhoria...", style: { flex: 1, padding: "13px 14px", borderRadius: 12, border: `1px solid ${C.line}`, background: C.soft, color: C.ink, fontSize: 14.5, fontFamily: "'DM Sans', sans-serif", outline: "none" } }),
+            React.createElement("button", { onClick: enviar, disabled: loading, style: { padding: "0 18px", borderRadius: 12, border: "none", cursor: "pointer", fontSize: 18,
+                    background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: "var(--onAccent)" } }, "\u2191"))));
+}
+// ---------- configurações ----------
+const MP_LINKS = { "Criador": "https://mpago.la/2ke2UT6", "Pro": "https://mpago.la/1zzuT3q" };
+function PagamentoModal({ plano: pl, onFechar, onConfirmar }) {
+    const link = MP_LINKS[pl.id];
+    const valor = pl.id === "Pro" ? "R$ 99,90" : "R$ 59,90";
+    return (React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.88)", zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center" } },
+        React.createElement("div", { style: { width: "100%", maxWidth: 480, background: "#0d0d14", borderRadius: "20px 20px 0 0", padding: "24px 22px 40px", border: "1px solid #2a2a40" } },
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 } },
+                React.createElement("span", { style: { fontSize: 19, fontWeight: 800, color: "#f0eeff", fontFamily: "'Space Grotesk',sans-serif" } },
+                    "Assinar plano ",
+                    pl.id),
+                React.createElement("button", { onClick: onFechar, style: { background: "none", border: "none", color: "#6b6a80", fontSize: 26, cursor: "pointer", lineHeight: 1, padding: "0 4px" } }, "\u00D7")),
+            React.createElement("div", { style: { padding: 16, borderRadius: 14, background: "#1a1a2e", border: "1px solid #2a2a40", marginBottom: 18, textAlign: "center" } },
+                React.createElement("div", { style: { fontSize: 13, color: "#6b6a80", marginBottom: 6 } }, "Valor mensal"),
+                React.createElement("div", { style: { fontSize: 38, fontWeight: 800, color: "#a855f7", fontFamily: "'Space Grotesk',sans-serif" } }, valor),
+                React.createElement("div", { style: { fontSize: 12, color: "#6b6a80", marginTop: 6 } }, pl.linha)),
+            React.createElement("p", { style: { fontSize: 13.5, color: "#6b6a80", lineHeight: 1.6, margin: "0 0 18px", textAlign: "center" } },
+                "Pague pelo Mercado Pago \u2014 PIX, cart\u00E3o ou boleto.",
+                React.createElement("br", null),
+                "Plano ativado em at\u00E9 1 hora ap\u00F3s a confirma\u00E7\u00E3o."),
+            React.createElement("a", { href: link, target: "_blank", rel: "noreferrer", style: { display: "block", width: "100%", padding: "16px", borderRadius: 12, textAlign: "center", background: "linear-gradient(135deg, #009ee3, #00b1ea)", color: "#fff", fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 16, textDecoration: "none", boxSizing: "border-box", marginBottom: 12 } }, "\uD83D\uDCB3 Pagar pelo Mercado Pago"),
+            React.createElement("button", { onClick: () => { onConfirmar(pl.id); onFechar(); }, style: { width: "100%", padding: "13px", borderRadius: 12, border: "1px solid #2a2a40", background: "transparent", color: "#6b6a80", cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: 14 } }, "J\u00E1 paguei \u2014 aguardando ativa\u00E7\u00E3o"))));
+}
+function ConfigScreen({ profile, plano, setPlano, usosSemana, limiteSemana, indicados, setIndicados }) {
+    const [aviso, setAviso] = useState("");
+    const [modalPlano, setModalPlano] = useState(null);
+    const [pendente, setPendente] = useState(null);
+    const COMISSAO = 0.40;
+    const codigo = (profile?.nome || "criador").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 10) || "criador";
+    const ganhoPorPro = 99.9 * COMISSAO;
+    return (React.createElement("div", { className: "rise" },
+        React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Configura\u00E7\u00F5es"),
+        React.createElement(Sub, null,
+            "Seu plano atual: ",
+            React.createElement("strong", { style: { color: C.amber } }, plano)),
+        modalPlano && React.createElement(PagamentoModal, { plano: modalPlano, onFechar: () => setModalPlano(null), onConfirmar: (id) => { setPendente(id); setAviso(`Pagamento registrado! Plano ${id} ativado em até 1 hora após confirmação.`); } }),
+        PLANOS.map((pl) => {
+            const atual = pl.id === plano;
+            const aguardando = pendente === pl.id;
+            return (React.createElement("div", { key: pl.id, style: { marginBottom: 12, padding: 16, borderRadius: 14, border: `1px solid ${atual ? pl.cor : C.line}`, background: atual ? "rgba(168,85,247,.06)" : C.card } },
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline" } },
+                    React.createElement("span", { className: "disp", style: { fontSize: 18, fontWeight: 700, color: pl.cor } }, pl.id),
+                    React.createElement("span", { style: { fontWeight: 700 } }, pl.preco)),
+                React.createElement("p", { style: { color: C.mute, fontSize: 13, margin: "6px 0 12px" } }, pl.linha),
+                atual ? (React.createElement("span", { style: { fontSize: 12.5, color: C.amber, fontWeight: 600 } }, "\u2713 Plano atual")) : aguardando ? (React.createElement("span", { style: { fontSize: 12.5, color: C.green, fontWeight: 600 } }, "\u23F3 Aguardando ativa\u00E7\u00E3o")) : pl.id !== "Grátis" ? (React.createElement("button", { onClick: () => setModalPlano(pl), style: { padding: "10px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 13.5, background: `linear-gradient(135deg, ${C.amber}, ${C.amberDeep})`, color: "var(--onAccent)" } },
+                    "Assinar ",
+                    pl.id)) : null));
+        }),
+        plano !== "Grátis" && (React.createElement("button", { onClick: () => { setPlano("Grátis"); setAviso("Plano cancelado. Você voltou pro Grátis."); }, style: { width: "100%", padding: "12px", borderRadius: 12, border: `1px solid ${C.line}`, background: "transparent", color: C.rose, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer", marginTop: 4 } }, "Cancelar assinatura")),
+        aviso && React.createElement("p", { style: { marginTop: 14, fontSize: 13, color: C.amber, textAlign: "center" } }, aviso),
+        React.createElement("h2", { className: "disp", style: { fontSize: 18, fontWeight: 700, margin: "26px 0 4px" } }, "\uD83C\uDF81 Indique e ganhe"),
+        React.createElement("p", { style: { color: C.mute, fontSize: 13, margin: "0 0 12px", lineHeight: 1.5 } },
+            "Ganhe ",
+            React.createElement("strong", { style: { color: C.amber } }, "40% do primeiro pagamento"),
+            " de cada pessoa que assinar pela sua indica\u00E7\u00E3o."),
+        React.createElement("div", { style: { borderRadius: 14, border: `1px solid ${C.line}`, background: C.card, padding: 15 } },
+            React.createElement("span", { style: { fontSize: 11, letterSpacing: 1.5, color: C.amber, textTransform: "uppercase" } }, "Seu link de convite"),
+            React.createElement("div", { style: { marginTop: 8, display: "flex", gap: 8, alignItems: "center" } },
+                React.createElement("div", { style: { flex: 1, padding: "10px 12px", borderRadius: 9, background: C.soft, border: `1px solid ${C.line}`, fontSize: 12.5, color: C.ink, wordBreak: "break-all" } },
+                    window.location.origin,
+                    "/?ref=",
+                    codigo),
+                React.createElement("button", { onClick: () => { navigator.clipboard?.writeText(`${window.location.origin}/?ref=${codigo}`); setAviso("Link copiado!"); setTimeout(() => setAviso(""), 2000); }, style: { flexShrink: 0, padding: "10px 14px", borderRadius: 9, border: `1px solid ${C.amber}`, background: "transparent", color: C.amber, cursor: "pointer", fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 13 } }, "Copiar")),
+            React.createElement("div", { style: { marginTop: 14, padding: "12px 14px", borderRadius: 10, background: "rgba(126,224,138,.1)", border: "1px solid rgba(126,224,138,.35)" } },
+                React.createElement("span", { style: { fontSize: 11, color: C.mute, textTransform: "uppercase", letterSpacing: 1 } }, "Indica\u00E7\u00F5es confirmadas"),
+                React.createElement("div", { className: "disp", style: { fontSize: 26, fontWeight: 800, color: C.green, marginTop: 2 } },
+                    indicados,
+                    " \u00D7 ",
+                    ganhoPorPro.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+                    " = ",
+                    (indicados * ganhoPorPro).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })),
+                React.createElement("p", { style: { fontSize: 11.5, color: C.mute, margin: "4px 0 0" } }, "40% de R$ 99,90 por assinatura confirmada")),
+            React.createElement("p", { style: { fontSize: 11.5, color: C.mute, margin: "10px 0 0", lineHeight: 1.5 } }, "Quando algu\u00E9m assinar pelo seu link, a comiss\u00E3o \u00E9 adicionada \u00E0 sua carteira ap\u00F3s confirma\u00E7\u00E3o do pagamento.")),
+        React.createElement("p", { style: { fontSize: 11, color: C.mute, textAlign: "center", marginTop: 18, opacity: .7, lineHeight: 1.5 } })));
+}
+// ---------- área de marcas (marketplace simulado) ----------
+// ---------- vagas para o CRIADOR (candidatar-se) ----------
+function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
+    const [chatAberto, setChatAberto] = useState(null);
+    const brl = (n) => Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    const meus = profile.metricas || { seguidores: 0, alcance: 0, eng: 0 };
+    const nichoMatch = (of) => {
+        const a = (of.nicho || "").toLowerCase().trim();
+        const b = (profile.nicho || "").toLowerCase().trim();
+        return !!a && !!b && (a.includes(b) || b.includes(a));
+    };
+    const combina = (of) => nichoMatch(of) && (!of.seguidoresMin || meus.seguidores >= of.seguidoresMin) && (!of.alcanceMin || meus.alcance >= of.alcanceMin);
+    function candidatar(of) {
+        if (!profile.verificado)
+            return;
+        setOfertas((arr) => arr.map((x) => {
+            if (x.id !== of.id)
+                return x;
+            if ((x.candidatos || []).some((c) => c.nome === (profile.nome || "Criador")))
+                return x;
+            const cand = { nome: profile.nome || "Criador", nicho: profile.nicho, seguidores: meus.seguidores, alcance: meus.alcance, eng: meus.eng, publico: profile.publico, plataformas: profile.plataformas, portfolio: profile.portfolio, status: "pendente" };
+            return { ...x, candidatos: [...(x.candidatos || []), cand] };
+        }));
+        notify && notify("marca", `Novo candidato: ${profile.nome || "Criador"} se inscreveu em "${of.titulo}"`);
+    }
+    function enviarEntrega(of) {
+        setOfertas((arr) => arr.map((x) => x.id !== of.id ? x : {
+            ...x, candidatos: x.candidatos.map((c) => c.nome === (profile.nome || "Criador") ? { ...c, status: "entregue", entrega: "minha-entrega.mp4" } : c),
+        }));
+        notify && notify("marca", `${profile.nome || "Criador"} enviou a entrega de "${of.titulo}"`);
+    }
+    function avaliarMarca(of, n) {
+        setOfertas((arr) => arr.map((x) => x.id !== of.id ? x : { ...x, candidatos: x.candidatos.map((c) => c.nome === (profile.nome || "Criador") ? { ...c, notaMarca: n } : c) }));
+    }
+    function responderConvite(of, aceitar) {
+        setOfertas((arr) => arr.map((x) => x.id !== of.id ? x : { ...x, candidatos: x.candidatos.map((c) => c.nome === (profile.nome || "Criador") ? { ...c, status: aceitar ? "aprovado" : "recusado" } : c) }));
+        notify && notify("marca", `${profile.nome || "Criador"} ${aceitar ? "aceitou" : "recusou"} o convite de "${of.titulo}"`);
+    }
+    const reputacaoMarca = (marca) => mediaNota(ofertas.filter((o) => o.marca === marca).flatMap((o) => (o.candidatos || []).map((c) => c.notaMarca || 0)));
+    // Criadores só veem campanhas ativas (não as que aguardam depósito)
+    const ofertasVisiveis = ofertas.filter(o => o.status !== "aguardando_deposito");
+    return (React.createElement("div", { className: "rise" },
+        React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Vagas de marcas"),
+        React.createElement(Sub, null, "Candidate-se \u00E0s campanhas das marcas. Os valores j\u00E1 s\u00E3o o que voc\u00EA recebe, limpo."),
+        React.createElement("div", { style: { marginBottom: 14, padding: "11px 13px", borderRadius: 12, border: `1px solid ${C.line}`, background: profile.verificado ? "rgba(126,224,138,.08)" : "rgba(255,107,107,.07)" } }, profile.verificado
+            ? React.createElement("p", { style: { fontSize: 12.5, margin: 0, color: C.green } },
+                "\u2713 M\u00E9tricas verificadas: ",
+                meus.seguidores.toLocaleString("pt-BR"),
+                " seguidores \u00B7 ",
+                meus.alcance.toLocaleString("pt-BR"),
+                " alcance \u00B7 ",
+                meus.eng,
+                "% eng.")
+            : React.createElement("p", { style: { fontSize: 12.5, margin: 0, color: C.rose } }, "\u26A0 Conecte sua conta no Perfil pra verificar. Sem isso, voc\u00EA n\u00E3o pode se candidatar.")),
+        ofertas.length === 0 ? (React.createElement("p", { style: { color: C.mute, fontSize: 13.5, textAlign: "center", padding: "30px 10px" } }, "Nenhuma marca publicou campanha ainda. Entre como Marca (sair e logar) pra criar uma e testar.")) : [...ofertas].sort((a, b) => (combina(b) ? 1 : 0) - (combina(a) ? 1 : 0)).map((of) => {
+            const meu = (of.candidatos || []).find((c) => c.nome === (profile.nome || "Criador"));
+            const bateSeg = !of.seguidoresMin || meus.seguidores >= of.seguidoresMin;
+            const bateAlc = !of.alcanceMin || meus.alcance >= of.alcanceMin;
+            return (React.createElement("div", { key: of.id, style: { borderRadius: 14, border: `1px solid ${combina(of) ? "rgba(126,224,138,.5)" : C.line}`, background: C.card, padding: 15, marginBottom: 12 } },
+                combina(of) && React.createElement("span", { style: { display: "inline-block", marginBottom: 8, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(126,224,138,.16)", color: C.green } }, "\u2B50 Combina com voc\u00EA"),
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    React.createElement("span", { className: "disp", style: { fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 } },
+                        React.createElement("span", { style: { fontSize: 20 } }, of.logo || "🏢"),
+                        of.marca,
+                        reputacaoMarca(of.marca) > 0 && React.createElement("span", { style: { fontSize: 11, color: "#ffcf4d" } },
+                            "\u2605 ",
+                            reputacaoMarca(of.marca))),
+                    React.createElement("span", { style: { fontWeight: 700,
