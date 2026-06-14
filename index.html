@@ -9,26 +9,22 @@
 [data-theme="light"]{--bg:#f6f3fc;--card:#ffffff;--soft:#f1ecfa;--line:#e6dff5;--ink:#1b1430;--mute:#6c6390;--accent:#7c3aed;--accent2:#9333ea;--rose:#e0356f;--green:#10a877;--onAccent:#ffffff}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#root{background:var(--bg);min-height:100vh;color:var(--ink)}
-#spinner{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px}
-.sp{width:38px;height:38px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
 #errmsg{display:none;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:14px;text-align:center;padding:24px}
-#errmsg button{padding:12px 24px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;font-family:sans-serif}
+#errmsg button{padding:12px 24px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:sans-serif}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 </head>
 <body>
-<div id="root"><div id="spinner"><div class="sp"></div><p style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando Cria...</p></div></div>
+<div id="root"></div>
 <div id="errmsg"><p style="font-size:32px">⚠️</p><p style="font-size:16px;font-weight:700;color:var(--ink);font-family:sans-serif">Algo deu errado</p><p id="errtxt" style="font-size:13px;color:var(--mute);max-width:280px;line-height:1.5;font-family:sans-serif"></p><button onclick="location.reload()">↺ Tentar novamente</button></div>
 <script>
 function mostrarErro(msg){document.getElementById('root').style.display='none';var e=document.getElementById('errmsg');e.style.display='flex';document.getElementById('errtxt').textContent=msg||'Erro desconhecido.';}
-var _t=setTimeout(function(){mostrarErro('Tempo esgotado. Verifique sua conexão e tente novamente.');},15000);
 try{
-if(!window.supabase)throw new Error('Supabase não carregou. Verifique sua conexão.');
-if(!window.React)throw new Error('React não carregou. Verifique sua conexão.');
-if(!window.ReactDOM)throw new Error('ReactDOM não carregou. Verifique sua conexão.');
+if(!window.supabase)throw new Error('Supabase não carregou.');
+if(!window.React)throw new Error('React não carregou.');
+if(!window.ReactDOM)throw new Error('ReactDOM não carregou.');
 window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
 var React=window.React,ReactDOM=window.ReactDOM;
 var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
@@ -539,9 +535,9 @@ function App() {
     var _o = useState(false), authed = _o[0], setAuthed = _o[1];
     var _p = useState("criador"), papel = _p[0], setPapel = _p[1];
     var _q = useState(null), sbUid = _q[0], setSbUid = _q[1];
-    var _r = useState(!!window._sb), sbLoad = _r[0], setSbLoad = _r[1];
+    var _r = useState(false), sbLoad = _r[0], setSbLoad = _r[1];
     var _s = useState(false), profileLoading = _s[0], setProfileLoading = _s[1];
-    var _t = useState(!!window._sb), perfilLoad = _t[0], setPerfilLoad = _t[1]; // true até carregar perfil do banco
+    var _t = useState(false), perfilLoad = _t[0], setPerfilLoad = _t[1];
     // AUTO-SAVE produtos da marca no Supabase
     useEffect(function () {
         if (papel !== "marca" || !sbUid || !marcaProfile.nome)
@@ -1246,4 +1242,14 @@ function ChatScreen(_a) {
                         setChat(__spreadArray(__spreadArray([], novo, true), [{ role: "assistant", text: "Deu um erro aqui: " + String(e_3.message || e_3) }], false));
                         return [3 /*break*/, 5];
                     case 4:
-       
+                        setLoading(false);
+                        return [7 /*endfinally*/];
+                    case 5: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    return (React.createElement("div", { className: "rise" },
+        React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Assistente"),
+        React.createElement(Sub, null, "Pe\u00E7a melhorias (\"d\u00E1 mais \u00EAnfase em dribles\") ou avise se mudou de nicho \u2014 o app aplica nas pr\u00F3ximas pautas."),
+        ajustes.length > 0 && (React.createElement("div", { style: { marginBottom: 14, padding: "10px 12px", bo
