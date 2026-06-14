@@ -21,35 +21,20 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 <body>
 <div id="sp"><div class="sp"></div><p style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando...</p></div>
 <div id="root"></div>
-
-<!-- Erro handler separado — sempre disponível -->
 <script>
 function mostrarErro(msg) {
   var sp = document.getElementById('sp');
   if (sp) sp.innerHTML = '<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:300px"><p style="font-size:28px">⚠️</p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Algo deu errado</p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">' + String(msg).slice(0,300) + '</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">↺ Recarregar</button></div>';
 }
-window.onerror = function(msg, src, line, col, err) {
-  mostrarErro((err ? err.message : msg) + ' (linha ' + line + ')');
-  return true;
-};
-window.addEventListener('unhandledrejection', function(e) {
-  mostrarErro('Erro async: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
-});
+window.onerror = function(m,s,l,c,e) { mostrarErro((e&&e.message?e.message:m)+' (L'+l+')'); return true; };
 </script>
-
-<!-- App pré-compilado — sem Babel, carrega instantaneamente -->
 <script>
 (function() {
-  if (!window.React || !window.ReactDOM || !window.supabase) {
-    mostrarErro('Dependências não carregaram. Verifique sua conexão.');
-    return;
-  }
+  if (!window.React || !window.ReactDOM || !window.supabase) { mostrarErro('Dependências não carregaram. Verifique sua conexão.'); return; }
   window._sb = supabase.createClient("https://faydgottylbbuylowlxg.supabase.co", "sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
-  var React    = window.React;
-  var ReactDOM = window.ReactDOM;
-  var useState  = React.useState;
-  var useRef    = React.useRef;
-  var useEffect = React.useEffect;
+  var React = window.React, ReactDOM = window.ReactDOM;
+  var useState = React.useState, useRef = React.useRef, useEffect = React.useEffect;
+  try {
 // ============================================================
 //  CREATOR STUDIO — protótipo completo
 //  • 7 abas (Dom→Sáb): clicou no dia, gera a pauta DAQUELE dia
@@ -433,17 +418,6 @@ function App() {
     const [sbLoad, setSbLoad] = useState(false);
     const [profileLoading, setProfileLoading] = useState(false);
     const [perfilLoad, setPerfilLoad] = useState(false);
-    // AUTO-SAVE produtos da marca no Supabase
-    useEffect(() => {
-        if (papel !== "marca" || !sbUid || !marcaProfile.nome)
-            return;
-        const meusProd = produtos.filter(p => p.dono === marcaProfile.nome);
-        const timer = setTimeout(() => {
-            const dadosLoja = { ...marcaProfile, _produtos: meusProd };
-            salvarLojasSb(dadosLoja);
-        }, 1500);
-        return () => clearTimeout(timer);
-    }, [produtos, papel, sbUid]);
     // AUTO-SAVE rascunhos no localStorage
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -645,6 +619,16 @@ function App() {
     const [colabs, setColabs] = useState([]);
     const [produtos, setProdutos] = useState([]);
     const [vendas, setVendas] = useState([]);
+    // AUTO-SAVE produtos da marca no Supabase (após produtos declarado)
+    useEffect(() => {
+        if (papel !== "marca" || !sbUid || !marcaProfile.nome)
+            return;
+        const meusProd = produtos.filter(p => p.dono === marcaProfile.nome);
+        const timer = setTimeout(() => {
+            salvarLojasSb({ ...marcaProfile, _produtos: meusProd });
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [produtos, papel, sbUid]);
     const hoje = new Date().getDay();
     const planoAtual = PLANOS.find((p) => p.id === plano) || PLANOS[0];
     const limiteSemana = planoAtual.limiteSemana;
@@ -1256,4 +1240,8 @@ function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
                     React.createElement("span", { style: { fontWeight: 700, color: C.amber } }, brl(of.valor * (1 - TAXA_PLATAFORMA)))),
                 React.createElement("p", { style: { fontSize: 13.5, margin: "6px 0 0", lineHeight: 1.45 } }, of.titulo),
                 of.briefing && React.createElement("p", { style: { fontSize: 12.5, margin: "5px 0 0", lineHeight: 1.45, color: C.mute } }, of.briefing),
-                React.createElement("div", { style: { display: "flex
+                React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 } },
+                    entregaTexto(of.entregaveis) && React.createElement(Tag, null, entregaTexto(of.entregaveis)),
+                    (of.plataforma || []).map((p) => React.createElement(Tag, { key: p }, p)),
+                    of.nicho && React.createElement(Tag, null, of.nicho),
+                    
