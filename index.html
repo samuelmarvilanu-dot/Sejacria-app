@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="dark">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <meta name="theme-color" content="#0e0a1a"/>
 <title>Cria — Onde criador vira negócio</title>
 <style>
@@ -25,11 +24,11 @@ html,body,#root{background:var(--bg);min-height:100vh;color:var(--ink)}
 <div id="errmsg"><p style="font-size:32px">⚠️</p><p style="font-size:16px;font-weight:700;color:var(--ink);font-family:sans-serif">Algo deu errado</p><p id="errtxt" style="font-size:13px;color:var(--mute);max-width:280px;line-height:1.5;font-family:sans-serif"></p><button onclick="location.reload()">↺ Tentar novamente</button></div>
 <script>
 function mostrarErro(msg){document.getElementById('root').style.display='none';var e=document.getElementById('errmsg');e.style.display='flex';document.getElementById('errtxt').textContent=msg||'Erro desconhecido.';}
-var _t=setTimeout(function(){mostrarErro('Tempo esgotado. Verifique sua conexão.');},12000);
+var _t=setTimeout(function(){mostrarErro('Tempo esgotado. Verifique sua conexão e tente novamente.');},15000);
 try{
-if(!window.supabase)throw new Error('Supabase não carregou.');
-if(!window.React)throw new Error('React não carregou.');
-if(!window.ReactDOM)throw new Error('ReactDOM não carregou.');
+if(!window.supabase)throw new Error('Supabase não carregou. Verifique sua conexão.');
+if(!window.React)throw new Error('React não carregou. Verifique sua conexão.');
+if(!window.ReactDOM)throw new Error('ReactDOM não carregou. Verifique sua conexão.');
 window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
 var React=window.React,ReactDOM=window.ReactDOM;
 var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
@@ -598,16 +597,19 @@ function App() {
             setPerfilLoad(false);
             return;
         }
-        // Segurança: se demorar mais de 5s, libera o app mesmo assim
-        var timeout = setTimeout(function () { setSbLoad(false); setPerfilLoad(false); }, 5000);
-        sb.auth.getSession().then(function (_a) {
-            var _b;
-            var session = _a.data.session;
+        // Timeout de segurança: SEMPRE para o loading após 4s, não importa o que aconteça
+        var timeout = setTimeout(function () {
+            console.warn("Timeout: forçando loading=false");
+            setSbLoad(false);
+            setPerfilLoad(false);
+        }, 4000);
+        sb.auth.getSession().then(function (res) {
+            var session = res && res.data && res.data.session;
             clearTimeout(timeout);
             if (session) {
                 setAuthed(true);
                 setSbUid(session.user.id);
-                var p = ((_b = session.user.user_metadata) === null || _b === void 0 ? void 0 : _b.papel) || "criador";
+                var p = (session.user.user_metadata && session.user.user_metadata.papel) || "criador";
                 setPapel(p);
                 carregarPerfilSb(session.user.id);
             }
@@ -615,22 +617,23 @@ function App() {
                 setPerfilLoad(false);
             }
             setSbLoad(false);
-        }).catch(function () {
+        }).catch(function (err) {
+            console.error("getSession erro:", err);
             clearTimeout(timeout);
             setSbLoad(false);
             setPerfilLoad(false);
         });
-        var subscription = sb.auth.onAuthStateChange(function (event, session) {
-            var _a;
+        var sub = sb.auth.onAuthStateChange(function (event, session) {
             if (event === "SIGNED_IN") {
                 setAuthed(true);
-                setSbUid(session.user.id);
-                var p = ((_a = session.user.user_metadata) === null || _a === void 0 ? void 0 : _a.papel) || "criador";
-                setPapel(p);
-                carregarPerfilSb(session.user.id);
+                if (session) {
+                    setSbUid(session.user.id);
+                    var p = (session.user.user_metadata && session.user.user_metadata.papel) || "criador";
+                    setPapel(p);
+                    carregarPerfilSb(session.user.id);
+                }
             }
             else if (event === "TOKEN_REFRESHED" && session) {
-                // Só atualiza auth, não recarrega perfil (evita loading ao voltar pro app)
                 setAuthed(true);
                 setSbUid(session.user.id);
             }
@@ -639,8 +642,8 @@ function App() {
                 setSbUid(null);
                 setPerfilLoad(false);
             }
-        }).data.subscription;
-        return function () { return subscription.unsubscribe(); };
+        });
+        return function () { sub.data && sub.data.subscription && sub.data.subscription.unsubscribe(); };
     }, []);
     function carregarPerfilSb(uid) {
         return __awaiter(this, void 0, void 0, function () {
@@ -1243,10 +1246,4 @@ function ChatScreen(_a) {
                         setChat(__spreadArray(__spreadArray([], novo, true), [{ role: "assistant", text: "Deu um erro aqui: " + String(e_3.message || e_3) }], false));
                         return [3 /*break*/, 5];
                     case 4:
-                        setLoading(false);
-                        return [7 /*endfinally*/];
-                    case 5: return [2 /*return*/];
-                }
-            });
-        });
-   
+       
