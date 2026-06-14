@@ -4,6 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <meta name="theme-color" content="#0e0a1a"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>Cria — Onde criador vira negócio</title>
 <style>
 [data-theme=dark]{--bg:#0e0a1a;--card:#191230;--soft:#150f28;--line:#2c2348;--ink:#f2efff;--mute:#9a90bf;--accent:#a855f7;--accent2:#7c3aed;--rose:#ff5d8f;--green:#3ee0a3;--amber:#f59e0b;--onAccent:#fff}
@@ -16,7 +19,7 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 </style>
 </head>
 <body>
-<div id="sp"><div class="sp"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando...</p></div>
+<div id="sp"><div class="sp"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando v2...</p></div>
 <div id="root"></div>
 
 <script>
@@ -1270,5 +1273,4 @@ function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
             return (React.createElement("div", { key: of.id, style: { borderRadius: 14, border: `1px solid ${combina(of) ? "rgba(126,224,138,.5)" : C.line}`, background: C.card, padding: 15, marginBottom: 12 } },
                 combina(of) && React.createElement("span", { style: { display: "inline-block", marginBottom: 8, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(126,224,138,.16)", color: C.green } }, "\u2B50 Combina com voc\u00EA"),
                 React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
-                    React.createElement("span", { className: "disp", style: { fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 } },
-                 
+     
