@@ -15,7 +15,7 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 </style>
 </head>
 <body>
-<div id="boot"><div class="bspin"></div><p id="bm" style="font-family:sans-serif;font-size:13px;color:#9a90bf">Carregando...</p></div>
+<div id="boot"><div class="bspin"></div><p id="bm" style="font-family:sans-serif;font-size:13px;color:#9a90bf">Iniciando Cria v12</p></div>
 <div id="root"></div>
 <script>
 window.onerror=function(msg,src,line){var b=document.getElementById('boot');if(b)b.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:340px"><p style="font-size:24px">!<\/p><p style="color:#ff5d8f;font-size:13px;font-weight:700;margin:12px 0 8px">Erro<\/p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg)+' (L'+line+')<\/p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700">Recarregar<\/button><\/div>';return true;};
@@ -1257,4 +1257,4 @@ function ChatScreen(_a) {
     return (React.createElement("div", { className: "rise" },
         React.createElement("h2", { className: "disp", style: { fontSize: 24, margin: "16px 0 2px", fontWeight: 700 } }, "Assistente"),
         React.createElement(Sub, null, "Pe\u00E7a melhorias (\"d\u00E1 mais \u00EAnfase em dribles\") ou avise se mudou de nicho \u2014 o app aplica nas pr\u00F3ximas pautas."),
-        ajustes.length > 0 && (React.createElement("div", { style: { marginBottom: 14, padding: "10px 12px", borderRad
+        ajustes.length > 0 && (React.createElement("div", { style: { marginBottom: 14, padding: "10px 12px", bord
