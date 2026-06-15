@@ -1,92 +1,72 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<meta name="theme-color" content="#0e0a1a"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
-<title>Cria — Onde criador vira negócio</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cria</title>
 <style>
-[data-theme=dark]{--bg:#0e0a1a;--card:#191230;--soft:#150f28;--line:#2c2348;--ink:#f2efff;--mute:#9a90bf;--accent:#a855f7;--accent2:#7c3aed;--rose:#ff5d8f;--green:#3ee0a3;--amber:#f59e0b;--onAccent:#fff}
+:root,[data-theme=dark]{--bg:#0e0a1a;--card:#191230;--soft:#150f28;--line:#2c2348;--ink:#f2efff;--mute:#9a90bf;--accent:#a855f7;--accent2:#7c3aed;--rose:#ff5d8f;--green:#3ee0a3;--amber:#f59e0b;--onAccent:#fff}
 [data-theme=light]{--bg:#f6f3fc;--card:#fff;--soft:#f1ecfa;--line:#e6dff5;--ink:#1b1430;--mute:#6c6390;--accent:#7c3aed;--accent2:#9333ea;--rose:#e0356f;--green:#10a877;--amber:#d97706;--onAccent:#fff}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 #sp{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:9999}
-.sp{width:40px;height:40px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
+.spc{width:40px;height:40px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<div id="sp"><div class="sp"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Abrindo Cria 🚀</p></div>
+<div id="sp"><div class="spc"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Iniciando...</p></div>
 <div id="root"></div>
-
+<script>document.documentElement.setAttribute('data-theme','dark');</script>
 <script>
-function mostrarErro(msg){var sp=document.getElementById('sp');if(sp){sp.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:300px"><p style="font-size:28px">\u26a0\ufe0f</p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Algo deu errado</p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg).slice(0,400)+'</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">Recarregar</button></div>';}}
-
-// Carrega um script de uma lista de CDNs, VERIFICANDO se a global foi definida
-// (não confia em onload/onerror que falham com 403)
+function mostrarErro(msg){
+  var sp=document.getElementById('sp');
+  if(sp){sp.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:300px"><p style="font-size:28px">!</p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Erro ao carregar</p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg).slice(0,400)+'</p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">Recarregar</button></div>';}
+}
+function setMsg(t){var e=document.getElementById('spm');if(e)e.textContent=t;}
 function carregarLib(urls, checkGlobal, cb){
   var i=0, done=false;
   function tentar(){
     if(done)return;
     if(i>=urls.length){done=true;cb(false);return;}
     var s=document.createElement('script');
-    s.src=urls[i]+'?t='+Date.now();
-    var timer=setTimeout(function(){
-      // CDN travou - tentar proximo
-      if(!done && !window[checkGlobal]){s.onload=null;s.onerror=null;i++;tentar();}
-    }, 6000);
-    s.onload=function(){
-      clearTimeout(timer);
-      if(done)return;
-      if(window[checkGlobal]){done=true;cb(true);}
-      else{i++;tentar();}
-    };
-    s.onerror=function(){
-      clearTimeout(timer);
-      if(done)return;
-      i++;tentar();
-    };
+    s.src=urls[i];
+    var timer=setTimeout(function(){ if(!done && !window[checkGlobal]){i++;tentar();} }, 7000);
+    s.onload=function(){ clearTimeout(timer); if(done)return; if(window[checkGlobal]){done=true;cb(true);} else {i++;tentar();} };
+    s.onerror=function(){ clearTimeout(timer); if(done)return; i++;tentar(); };
     document.head.appendChild(s);
   }
   tentar();
 }
-
-function setMsg(t){var e=document.getElementById('spm');if(e)e.textContent=t;}
-
 setMsg('Carregando React...');
 carregarLib([
   "https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js",
   "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"
-], 'React', function(ok1){
-  if(!ok1){mostrarErro('Não foi possível carregar o React. Verifique sua conexão e recarregue.');return;}
+], 'React', function(ok){
+  if(!ok){mostrarErro('Nao foi possivel carregar React. Verifique a conexao.');return;}
   setMsg('Carregando ReactDOM...');
   carregarLib([
     "https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js",
     "https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"
   ], 'ReactDOM', function(ok2){
-    if(!ok2){mostrarErro('Não foi possível carregar o ReactDOM. Recarregue.');return;}
+    if(!ok2){mostrarErro('Nao foi possivel carregar ReactDOM.');return;}
     setMsg('Carregando dados...');
     carregarLib([
       "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js",
       "https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"
     ], 'supabase', function(ok3){
-      if(!ok3){mostrarErro('Não foi possível carregar o Supabase. Recarregue.');return;}
+      if(!ok3){mostrarErro('Nao foi possivel carregar Supabase.');return;}
       setMsg('Iniciando...');
       iniciarApp();
     });
   });
 });
-
 function iniciarApp(){
-  window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
-  var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
   try{
-
+    window._sb=supabase.createClient("https://faydgottylbbuylowlxg.supabase.co","sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
+    var useState=React.useState,useRef=React.useRef,useEffect=React.useEffect;
 // ============================================================
 //  CREATOR STUDIO — protótipo completo
 //  • 7 abas (Dom→Sáb): clicou no dia, gera a pauta DAQUELE dia
@@ -1281,4 +1261,7 @@ function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
             const bateSeg = !of.seguidoresMin || meus.seguidores >= of.seguidoresMin;
             const bateAlc = !of.alcanceMin || meus.alcance >= of.alcanceMin;
             return (React.createElement("div", { key: of.id, style: { borderRadius: 14, border: `1px solid ${combina(of) ? "rgba(126,224,138,.5)" : C.line}`, background: C.card, padding: 15, marginBottom: 12 } },
-                combina(of) && React.createElement("span", { style: { display: "inline-block", marginBott
+                combina(of) && React.createElement("span", { style: { display: "inline-block", marginBottom: 8, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(126,224,138,.16)", color: C.green } }, "\u2B50 Combina com voc\u00EA"),
+                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
+                    React.createElement("span", { className: "disp", style: { fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 } },
+                        React.createElement("span"
