@@ -13,22 +13,61 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 .bspin{width:40px;height:40px;border-radius:50%;border:3px solid #2c2348;border-top-color:#a855f7;animation:bsp .8s linear infinite}
 @keyframes bsp{to{transform:rotate(360deg)}}
 </style>
-<script>document.documentElement.setAttribute('data-theme','dark');</script>
 </head>
 <body>
 <div id="boot"><div class="bspin"></div><p id="bm" style="font-family:sans-serif;font-size:13px;color:#9a90bf">Carregando...</p></div>
 <div id="root"></div>
-<script>
-(function(){
-  "use strict";
-  function erro(m){var b=document.getElementById('boot');if(b)b.innerHTML='<div style="padding:24px;text-align:center;font-family:sans-serif;max-width:320px"><p style="font-size:28px">!<\/p><p style="color:#f2efff;font-size:15px;font-weight:700;margin:12px 0 8px">Erro<\/p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(m).slice(0,350)+'<\/p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;cursor:pointer">Recarregar<\/button><\/div>';}
-  function bmsg(t){var e=document.getElementById('bm');if(e)e.textContent=t;}
 
-  // Define iniciar ANTES de qualquer chamada
-  function iniciar(){
-    try{
-      window._sb = supabase.createClient("https://faydgottylbbuylowlxg.supabase.co", "sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
-      var useState = React.useState, useRef = React.useRef, useEffect = React.useEffect;
+<script>
+// PRIMEIRO de tudo: capturar QUALQUER erro e mostrar
+window.onerror = function(msg, src, line, col){
+  var b = document.getElementById('boot');
+  if(b) b.innerHTML = '<div style="padding:24px;text-align:center;font-family:monospace;max-width:340px"><p style="font-size:24px;font-family:sans-serif">!<\/p><p style="color:#ff5d8f;font-size:13px;font-weight:700;margin:12px 0 8px;font-family:sans-serif">Erro detectado<\/p><p style="color:#9a90bf;font-size:11px;word-break:break-word;margin-bottom:16px">'+String(msg)+'<br>linha '+line+'<\/p><button onclick="location.reload()" style="padding:10px 20px;border-radius:10px;border:none;background:#a855f7;color:#fff;font-weight:700;font-family:sans-serif">Recarregar<\/button><\/div>';
+  return true;
+};
+document.documentElement.setAttribute('data-theme','dark');
+</script>
+
+<script>
+// Loader
+(function(){
+  function bmsg(t){var e=document.getElementById('bm');if(e)e.textContent=t;}
+  function carrega(urls, glob, cb){
+    var i=0;
+    function go(){
+      if(i>=urls.length){cb(false);return;}
+      var s=document.createElement('script');
+      s.src=urls[i];
+      s.onload=function(){window[glob]?cb(true):(i++,go());};
+      s.onerror=function(){i++;go();};
+      document.head.appendChild(s);
+    }
+    go();
+  }
+  bmsg('1/4 React...');
+  carrega(['https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js','https://unpkg.com/react@18.3.1/umd/react.production.min.js','https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js'],'React',function(ok){
+    if(!ok){window.onerror('React nao carregou de nenhum CDN',0,0);return;}
+    bmsg('2/4 ReactDOM...');
+    carrega(['https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js','https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js','https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js'],'ReactDOM',function(ok2){
+      if(!ok2){window.onerror('ReactDOM nao carregou',0,0);return;}
+      bmsg('3/4 Supabase...');
+      carrega(['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js','https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'],'supabase',function(ok3){
+        if(!ok3){window.onerror('Supabase nao carregou',0,0);return;}
+        bmsg('4/4 Iniciando...');
+        if(typeof window.iniciarApp === 'function'){ window.iniciarApp(); }
+        else { window.onerror('iniciarApp nao foi definido (erro no codigo do app)',0,0); }
+      });
+    });
+  });
+})();
+</script>
+
+<script>
+// App - exposto em window.iniciarApp. Se este script tiver erro de sintaxe,
+// o window.onerror acima captura e mostra.
+window.iniciarApp = function(){
+  window._sb = supabase.createClient("https://faydgottylbbuylowlxg.supabase.co", "sb_publishable_Ixoymjk7YFspX5n003zzFw_h8uZxxYF");
+  var useState = React.useState, useRef = React.useRef, useEffect = React.useEffect;
 
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
@@ -1230,25 +1269,4 @@ function ChatScreen(_a) {
                     case 1:
                         _a.trys.push([1, 3, 4, 5]);
                         return [4 /*yield*/, chamarIA({
-                                system: "Voc\u00EA \u00E9 o assistente do Cria. Perfil atual do criador:\n".concat(perfilTexto(), "\nAjustes j\u00E1 ativos: ").concat(ajustes.length ? ajustes.join("; ") : "nenhum", ".\n\nO criador pode pedir pra voc\u00EA dar mais \u00EAnfase em algo, mudar o foco do conte\u00FAdo, ou avisar que trocou de nicho. Quando ele pedir um ajuste, transforme em uma instru\u00E7\u00E3o curta e imperativa pra valer nas pr\u00F3ximas pautas.\n\nResponda SEMPRE apenas com JSON v\u00E1lido, sem markdown:\n{\n  \"resposta\": \"resposta curta e pr\u00E1tica (m\u00E1x 3 frases), confirmando o que ser\u00E1 ajustado\",\n  \"ajuste\": \"instru\u00E7\u00E3o curta e imperativa pra guardar, OU null se n\u00E3o for um pedido de ajuste\",\n  \"novo_nicho\": \"o novo nicho SE ele disse que mudou de nicho, sen\u00E3o null\"\n}"),
-                                messages: novo.map(function (m) { return ({ role: m.role, content: m.text }); }),
-                            })];
-                    case 2:
-                        txt = _a.sent();
-                        resposta = txt.trim(), ajuste = null, novoNicho = null;
-                        try {
-                            obj = JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}") + 1));
-                            resposta = obj.resposta || resposta;
-                            ajuste = obj.ajuste && obj.ajuste !== "null" ? obj.ajuste : null;
-                            novoNicho = obj.novo_nicho && obj.novo_nicho !== "null" ? obj.novo_nicho : null;
-                        }
-                        catch (_) { }
-                        extras = [];
-                        if (ajuste) {
-                            addAjuste(ajuste);
-                            extras.push({ role: "sys", text: "\u2713 Ajuste salvo: ".concat(ajuste) });
-                        }
-                        if (novoNicho) {
-                            onNovoNicho(novoNicho);
-                            extras.push({ role: "sys", text: "\uD83D\uDD04 Nicho atualizado para \"".concat(novoNicho, "\". As pautas foram resetadas.") });
- 
+                                system: "Voc\u00EA \u00E9 o assistente do Cria. Perfil atual do criador:\n".concat(perfilTexto(), "\nAjustes j\u00E1 ativos: ").concat(ajustes.length ? ajustes.join("; ") : "nenhum", ".\n\nO criador pode pedir pra voc\u00EA dar mais \u00EA
