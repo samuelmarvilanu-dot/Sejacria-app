@@ -19,7 +19,7 @@ html,body,#root{background:var(--bg);min-height:100dvh;color:var(--ink)}
 </style>
 </head>
 <body>
-<div id="sp"><div class="sp"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Carregando v2...</p></div>
+<div id="sp"><div class="sp"></div><p id="spm" style="color:var(--mute);font-size:13px;font-family:sans-serif">Abrindo Cria 🚀</p></div>
 <div id="root"></div>
 
 <script>
@@ -28,17 +28,27 @@ function mostrarErro(msg){var sp=document.getElementById('sp');if(sp){sp.innerHT
 // Carrega um script de uma lista de CDNs, VERIFICANDO se a global foi definida
 // (não confia em onload/onerror que falham com 403)
 function carregarLib(urls, checkGlobal, cb){
-  var i=0;
+  var i=0, done=false;
   function tentar(){
-    if(i>=urls.length){cb(false);return;}
+    if(done)return;
+    if(i>=urls.length){done=true;cb(false);return;}
     var s=document.createElement('script');
-    s.src=urls[i];
+    s.src=urls[i]+'?t='+Date.now();
+    var timer=setTimeout(function(){
+      // CDN travou - tentar proximo
+      if(!done && !window[checkGlobal]){s.onload=null;s.onerror=null;i++;tentar();}
+    }, 6000);
     s.onload=function(){
-      // Verificar se a global REALMENTE existe
-      if(window[checkGlobal]){cb(true);}
+      clearTimeout(timer);
+      if(done)return;
+      if(window[checkGlobal]){done=true;cb(true);}
       else{i++;tentar();}
     };
-    s.onerror=function(){i++;tentar();};
+    s.onerror=function(){
+      clearTimeout(timer);
+      if(done)return;
+      i++;tentar();
+    };
     document.head.appendChild(s);
   }
   tentar();
@@ -1271,6 +1281,4 @@ function MarcasScreen({ profile, ofertas, setOfertas, mensagens, addMsg }) {
             const bateSeg = !of.seguidoresMin || meus.seguidores >= of.seguidoresMin;
             const bateAlc = !of.alcanceMin || meus.alcance >= of.alcanceMin;
             return (React.createElement("div", { key: of.id, style: { borderRadius: 14, border: `1px solid ${combina(of) ? "rgba(126,224,138,.5)" : C.line}`, background: C.card, padding: 15, marginBottom: 12 } },
-                combina(of) && React.createElement("span", { style: { display: "inline-block", marginBottom: 8, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: "rgba(126,224,138,.16)", color: C.green } }, "\u2B50 Combina com voc\u00EA"),
-                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } },
-     
+                combina(of) && React.createElement("span", { style: { display: "inline-block", marginBott
