@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cria</title>
+<meta name="description" content="Cria — onde criador vira negócio. Ideias de conteúdo com IA, parcerias com marcas e monetização pra criadores brasileiros.">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0a0613">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cria">
+<link rel="apple-touch-icon" href="https://faydgottylbbuylowlxg.supabase.co/storage/v1/object/public/imagens/ChatGPT%20Image%2018%20de%20jun.%20de%202026,%2000_13_42.png">
 <style>
 :root,[data-theme=dark]{--bg:#0a0613;--card:#1a1235;--soft:#140d2b;--line:#332658;--ink:#f4f0ff;--mute:#a99cd0;--accent:#b366ff;--accent2:#8b3dff;--rose:#ff4d8d;--green:#3ee0a3;--amber:#f59e0b;--onAccent:#fff}
 [data-theme=light]{--bg:#f6f3fc;--card:#fff;--soft:#f1ecfa;--line:#e6dff5;--ink:#1b1430;--mute:#6c6390;--accent:#7c3aed;--accent2:#9333ea;--rose:#e0356f;--green:#10a877;--amber:#d97706;--onAccent:#fff}
@@ -55,6 +62,9 @@ body{display:flex;justify-content:center}
         }catch(e){ erro('Erro no app: '+e.message); }
       })
       .catch(function(e){ erro('Nao baixou o app: '+e.message); });
+  }
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
   }
   esperaLibs();
 })();
