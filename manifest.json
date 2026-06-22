@@ -1,0 +1,25 @@
+{
+  "name": "Cria — onde criador vira negócio",
+  "short_name": "Cria",
+  "description": "Ideias de conteúdo com IA, parcerias com marcas e monetização pra criadores brasileiros.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0613",
+  "theme_color": "#0a0613",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "https://faydgottylbbuylowlxg.supabase.co/storage/v1/object/public/imagens/ChatGPT%20Image%2018%20de%20jun.%20de%202026,%2000_13_42.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://faydgottylbbuylowlxg.supabase.co/storage/v1/object/public/imagens/ChatGPT%20Image%2018%20de%20jun.%20de%202026,%2000_13_42.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
