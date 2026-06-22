@@ -5,10 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Cria</title>
 <style>
-:root,[data-theme=dark]{--bg:#0e0a1a;--card:#191230;--soft:#150f28;--line:#2c2348;--ink:#f2efff;--mute:#9a90bf;--accent:#a855f7;--accent2:#7c3aed;--rose:#ff5d8f;--green:#3ee0a3;--amber:#f59e0b;--onAccent:#fff}
+:root,[data-theme=dark]{--bg:#0a0613;--card:#1a1235;--soft:#140d2b;--line:#332658;--ink:#f4f0ff;--mute:#a99cd0;--accent:#b366ff;--accent2:#8b3dff;--rose:#ff4d8d;--green:#3ee0a3;--amber:#f59e0b;--onAccent:#fff}
 [data-theme=light]{--bg:#f6f3fc;--card:#fff;--soft:#f1ecfa;--line:#e6dff5;--ink:#1b1430;--mute:#6c6390;--accent:#7c3aed;--accent2:#9333ea;--rose:#e0356f;--green:#10a877;--amber:#d97706;--onAccent:#fff}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body,#root{background:var(--bg);min-height:100dvh;width:100%;max-width:100%;color:var(--ink);overflow-x:hidden}
+html,body,#root{background:var(--bg);min-height:100dvh;min-height:100vh;width:100%;max-width:100%;color:var(--ink);overflow-x:hidden}
+body{display:flex;justify-content:center}
+#root{width:100%}
+@media(min-width:900px){
+  body{background:radial-gradient(circle at 50% 0%,rgba(179,102,255,.08),transparent 60%),var(--bg)}
+  #root{max-width:1000px;box-shadow:0 0 80px rgba(0,0,0,.25)}
+}
 #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:var(--bg);z-index:9999;padding:20px}
 .bspin{width:40px;height:40px;border-radius:50%;border:3px solid #2c2348;border-top-color:#a855f7;animation:bsp .8s linear infinite}
 @keyframes bsp{to{transform:rotate(360deg)}}
