@@ -28,6 +28,8 @@ self.addEventListener('push', function(e) {
     tag: data.tag || 'cria-push-' + Date.now(),
     data: { url: data.url || '/' },
     requireInteraction: false,
+    silent: false,
+    renotify: true,
     vibrate: [200, 100, 200],
   };
   e.waitUntil(self.registration.showNotification(data.titulo || '🎬 Cria', opcoes));
@@ -37,16 +39,23 @@ self.addEventListener('push', function(e) {
 // Foca o app se já estiver aberto, ou abre uma nova janela.
 self.addEventListener('notificationclick', function(e) {
   e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) || '/';
+  // Sempre abre a raiz absoluta do app (evita p\u00E1gina de erro por caminho relativo).
+  var destino = self.location.origin + '/';
   e.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clients) {
+      // Se o app j\u00E1 estiver aberto em alguma aba, foca nela.
       for (var i = 0; i < clients.length; i++) {
-        if (clients[i].url.indexOf(self.location.origin) === 0 && 'focus' in clients[i]) {
-          return clients[i].focus();
+        var c = clients[i];
+        if (c.url.indexOf(self.location.origin) === 0 && 'focus' in c) {
+          return c.focus();
         }
       }
-      return self.clients.openWindow(url);
-    })
+      // Sen\u00E3o, abre uma nova janela na raiz do app.
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(destino);
+      }
+      return null;
+    }).catch(function() { return null; })
   );
 });
 
@@ -68,6 +77,8 @@ self.addEventListener('message', function(e) {
         tag: 'cria-lembrete-' + msg.id,
         data: { url: '/' },
         requireInteraction: false,
+        silent: false,
+        renotify: true,
         vibrate: [200, 100, 200],
       });
       _removerDaLista(msg.id);
@@ -93,6 +104,8 @@ self.addEventListener('message', function(e) {
       icon: '/icon-192.png',
       tag: 'cria-teste-' + Date.now(),
       requireInteraction: false,
+      silent: false,
+      vibrate: [200, 100, 200],
     });
     return;
   }
