@@ -6,5 +6,10 @@
         { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/claude.js": {
+      "maxDuration": 60
+    }
+  }
 }
